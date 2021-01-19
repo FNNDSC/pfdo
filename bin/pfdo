@@ -19,17 +19,17 @@ import  pfmisc
 from    pfmisc._colors      import Colors
 from    pfmisc              import other
 
-str_version = "1.0.12"
+str_version = "2.0.0"
 str_desc = Colors.CYAN + """
 
-                                  __      _        
-                                 / _|    | |       
-                          _ __  | |_   __| |  ___  
+                                  __      _
+                                 / _|    | |
+                          _ __  | |_   __| |  ___
                          | '_ \ |  _| / _` | / _ \ 
                          | |_) || |  | (_| || (_) |
-                         | .__/ |_|   \__,_| \___/ 
-                         | |                       
-                         |_|                       
+                         | .__/ |_|   \__,_| \___/
+                         | |
+                         |_|
 
 
 
@@ -71,7 +71,8 @@ def synopsis(ab_shortOnly = False):
                      -I|--inputDir <inputDir>               \\
                      -O|--outputDir <outputDir>             \\
                     [-i|--inputFile <inputFile>]            \\
-                    [-f|--filterExpression <someFilter>]    \\
+                    [-f|--fileFilter <filter1,filter2,...>] \\
+                    [-d|--dirFilter <filter1,filter2,...>]  \\
                     [--outputLeafDir <outputLeafDirFormat>] \\
                     [--threads <numThreads>]                \\
                     [--test]                                \\
@@ -111,9 +112,30 @@ def synopsis(ab_shortOnly = False):
         specified, then do not perform a directory walk, but convert only
         this file.
 
-        [-f|--filterExpression <someFilter>]
-        An optional string to filter the files of interest from the
-        <inputDir> tree.
+        [-f|--fileFilter <someFilter1,someFilter2,...>]
+        An optional comma-delimated string to filter out files of interest
+        from the <inputDir> tree. Each token in the expression is applied in
+        turn over the space of files in a directory location, and only files
+        that contain this token string in their filename are preserved.
+
+        [-d|--dirFilter <someFilter1,someFilter2,...>]
+        Similar to the `fileFilter` but applied over the space of leaf node
+        in directory paths. A directory must contain at least one file
+        to be considered.
+
+        If a directory leaf node contains a string that corresponds to any of
+        the filter tokens, a special "hit" is recorded in the file hit list,
+        "%d-<leafnode>". For example, a directory of
+
+                            /some/dir/in/the/inputspace/here1234
+
+        with a `dirFilter` of `1234` will create a "special" hit entry of
+        "%d-here1234" to tag this directory for processing.
+
+        In addition, if a directory is filtered through, all the files in
+        that directory will be added to the filtered file list. If no files
+        are to be added, passing an explicit file filter with an "empty"
+        single string argument, i.e. `--fileFilter " "`, is advised.
 
         [--outputLeafDir <outputLeafDirFormat>]
         If specified, will apply the <outputLeafDirFormat> to the output
@@ -123,16 +145,16 @@ def synopsis(ab_shortOnly = False):
 
         This is a formatting spec, so
 
-            --outputLeafDir 'preview-%%s'
+            --outputLeafDir 'preview-%s'
 
-        where %%s is the original leaf directory node, will prefix each
+        where %s is the original leaf directory node, will prefix each
         final directory containing output with the text 'preview-' which
         can be useful in describing some features of the output set.
 
         [--test]
         If specified, run the "dummy" internal callback loop triad. The test
         flow simply tags files in some inputDir tree and "touches" them to a
-        reconstiuted tree in the output directory, prefixed with the text 
+        reconstiuted tree in the output directory, prefixed with the text
         "analyzed-".
 
         [--threads <numThreads>]
@@ -179,6 +201,15 @@ def synopsis(ab_shortOnly = False):
     the original input. This touched file will be prefixed with the
     string "analyzed-".
 
+        pfdo                                                \\
+            -I $(pwd)/raw  -d 100307 -f " "                 \\
+            -O $(pwd)/out --test --json                     \\
+            --threads 0 --printElapsedTime
+
+    This will consider each directory in the input tree space that
+    contains files, but will "tag" any leaf node directory that
+    contains the string "100307" with a tag "file" "%d-100307".
+
     Finally the elapsed time and a JSON output are printed.
 
     '''
@@ -199,9 +230,13 @@ parser.add_argument("-i", "--inputFile",
                     help    = "input file",
                     dest    = 'inputFile',
                     default = '')
-parser.add_argument("-f", "--filterExpression",
-                    help    = "string file filter",
-                    dest    = 'filter',
+parser.add_argument("-f", "--fileFilter",
+                    help    = "a list of comma separated string filters to apply across the input file space",
+                    dest    = 'fileFilter',
+                    default = '')
+parser.add_argument("-d", "--dirFilter",
+                    help    = "a list of comma separated string filters to apply across the input dir space",
+                    dest    = 'dirFilter',
                     default = '')
 parser.add_argument("-O", "--outputDir",
                     help    = "output image directory",
