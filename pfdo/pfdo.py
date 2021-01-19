@@ -199,19 +199,56 @@ class pfdo(object):
             'overwrite':    self.args['overwrite']
         }
 
-    def filelist_prune(self, at_data, *args, **kwargs) -> dict:
+    def FS_filter(self, at_data, *args, **kwargs) -> dict:
         """
-        Given a list of files, possibly prune list by
-        interal self.args['filter'].
+        Apply a filter to the string space of file and directory
+        representations.
+
+        The purpose of this method is to reduce the original space of
+
+                        "<path>": [<"filesToProcess">]
+
+        to only those paths and files that are relevant to the operation being
+        performed. Two filters are understood, a `fileFilter` that filters
+        filenames that match any of the passed search substrings from the CLI
+        `--fileFilter`, and a`dirFilter` that filters directories whose
+        leaf node match any of the passed `dirFilter` substrings.
+
+        For the `fileFilter`, a list of files conforming to the filter are
+        preserved, while for the `dirFilter` a list of strings, prefixed by
+        '%d-' with the basename of the directory hit are preserved. s
+
+        So for example, a `--dirFilter` of '1234' will, in any leaf directory
+        of the FS space that contains the string '1234', append a "hit"
+        "%d-<basename str_path>".
+
         """
 
         b_status    : bool      = True
         l_file      : list      = []
+        l_dirHits   : list      = []
+        l_dir       : list      = []
         str_path    : str       = at_data[0]
         al_file     : list      = at_data[1]
 
-        if len(self.args['filter']):
-            al_file = [x for x in al_file if self.args['filter'] in x]
+        if len(self.args['fileFilter']):
+            al_file     = [x                                            \
+                            for y in self.args['fileFilter'].split(',')     \
+                                for x in al_file if y in x]
+        if len(self.args['dirFilter']):
+            l_dirHits   = [os.path.basename(str_path)                   \
+                            for y in self.args['dirFilter'].split(',')  \
+                                if y in os.path.basename(str_path)]
+        if len(l_dirHits):
+            # Remove any duplicates in the l_dirHits:. Duplicates can
+            # occur if the tokens in the filter expression map more than
+            # once into the leaf node in the <str_path>, as a path that is
+            #
+            #                   /some/dir/in/the/space/1234567
+            #
+            # and a search filter on the dirspace of "123,567"
+            [l_dir.append(x) for x in l_dirHits if x not in l_dir]
+            [al_file.append("%%d-%s" % d) for d in l_dir]
 
         if len(al_file):
             al_file.sort()
@@ -234,7 +271,7 @@ class pfdo(object):
         """
         d_filterFileHitList = self.pf_tree.tree_process(
                         inputReadCallback       = None,
-                        analysisCallback        = self.filelist_prune,
+                        analysisCallback        = self.FS_filter,
                         outputWriteCallback     = None,
                         applyResultsTo          = 'inputTree',
                         applyKey                = 'l_file',
@@ -332,7 +369,7 @@ class pfdo(object):
             d_pftreeProbe   = self.pf_tree.run(timerStart = False)
             if d_pftreeProbe['status']:
                 b_status    = d_pftreeProbe['status']
-                if len(self.args['filter']):
+                if len(self.args['fileFilter']) or len(self.args['dirFilter']):
                     d_filter    = self.filterFileHitList()
                     b_status    = d_filter['status']
                 if self.args['test']:
