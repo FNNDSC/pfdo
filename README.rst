@@ -155,8 +155,19 @@ Run down a directory tree and touch all the files in the input tree that are ``j
             --threads 0 --printElapsedTime
 
 
-The above will find all files in the tree structure rooted at /var/www/html/data that also contain the string "jpg" anywhere in the filename. For each file found, a corresponding file will be touched in the output directory, in the same tree location as the original input. This touched file will be prefixed with the
-string "analyzed-".
+The above will find all files in the tree structure rooted at ``/var/www/html/`` data that also contain the string ``jpg`` anywhere in the filename. For each file found, a corresponding file will be touched in the output directory, in the same tree location as the original input. This touched file will be prefixed with the
+string ``analyzed-``.
+
+.. code:: bash
+
+        pfdo                                                \\
+            -I $(pwd)/raw  -d 100307 -f " "                 \\
+            -O $(pwd)/out --test --json                     \\
+            --threads 0 --printElapsedTime
+
+This will consider each directory in the input tree space that contains files, but will "tag" any leaf node directory that contains the string ``100307`` with a tag "file" ``%d-100307``.
 
 Finally the elapsed time and a JSON output are printed.
+
+*_30_*
 
