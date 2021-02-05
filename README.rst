@@ -150,6 +150,8 @@ Filtering
 
 The ``--fileFilter`` and ``--dirFilter`` apply a filter to the string space of file and directory representations, reducing the original space of
 
+   .. code:: bash
+
                         "<path>": [<"filesToProcess">]
 
 to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf node match any of the passed ``--dirFilter`` substrings.
@@ -158,7 +160,7 @@ The effect of these filters is hierarchical. First, the ``fileFilter`` is applie
 
 Next, if a ``dirFilter`` has been specified, the current string path corresponding to the filenames being filtered is considered. Each string in the comma separated ``dirFilter`` list is exacted, and if the basename of the working directory contains the filter substring, the (filtered) files are conserved. If the basename of the working directory does not contain any of the ``dirFilter`` substrings, the file list is discarded.
 
-Thus, a ``dirFilter`` of ``100307,100556`` and a fileFilter of ``png,jpg`` will reduce the space of files to process to ONLY files that have a parent directory of ``100307`` OR ``100556`` AND that contain either the string ``png`` OR ``jpg`` in their file names.
+Thus, a ``--dirFilter 100307,100556`` and a ``--fileFilter png,jpg`` will reduce the space of files to process to ONLY files that have a parent directory of ``100307`` OR ``100556`` AND that contain either the string ``png`` OR ``jpg`` in their file names.
 
 Processing
 ~~~~~~~~~~
