@@ -145,13 +145,31 @@ Command line arguments
 Examples
 --------
 
+Filtering
+~~~~~~~~~
+
+The ``--fileFilter`` and ``--dirFilter`` apply a filter to the string space of file and directory representations, reducing the original space of
+
+                        "<path>": [<"filesToProcess">]
+
+to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf node match any of the passed ``--dirFilter`` substrings.
+
+The effect of these filters is hierarchical. First, the ``fileFilter`` is applied across the space of files for a given directory path. The files are subject to a logical OR operation across the comma separated filter argument. Thus, a ``fileFilter`` of ``png,jpg,body`` will filter all files that have the substrings of ``png`` OR ``jpg`` OR ``body`` in their filenames.
+
+Next, if a ``dirFilter`` has been specified, the current string path corresponding to the filenames being filtered is considered. Each string in the comma separated ``dirFilter`` list is exacted, and if the basename of the working directory contains the filter substring, the (filtered) files are conserved. If the basename of the working directory does not contain any of the ``dirFilter`` substrings, the file list is discarded.
+
+Thus, a ``dirFilter`` of ``100307,100556`` and a fileFilter of ``png,jpg`` will reduce the space of files to process to ONLY files that have a parent directory of ``100307`` OR ``100556`` AND that contain either the string ``png`` OR ``jpg`` in their file names.
+
+Processing
+~~~~~~~~~~
+
 Run down a directory tree and touch all the files in the input tree that are ``jpgs`` to similar locations in the output directory:
 
 .. code:: bash
 
-        pfdo                                                \\
-            -I /var/www/html/data -f jpg                    \\
-            -O /tmp/jpg --test --json                       \\
+        pfdo                                                \
+            -I /var/www/html/data -f jpg                    \
+            -O /tmp/jpg --test --json                       \
             --threads 0 --printElapsedTime
 
 
@@ -160,14 +178,14 @@ string ``analyzed-``.
 
 .. code:: bash
 
-        pfdo                                                \\
-            -I $(pwd)/raw  -d 100307 -f " "                 \\
-            -O $(pwd)/out --test --json                     \\
+        pfdo                                                \
+            -I $(pwd)/raw  -d 100307 -f " "                 \
+            -O $(pwd)/out --test --json                     \
             --threads 0 --printElapsedTime
 
 This will consider each directory in the input tree space that contains files, but will "tag" any leaf node directory that contains the string ``100307`` with a tag "file" ``%d-100307``.
 
 Finally the elapsed time and a JSON output are printed.
 
-*_30_*
+*-30-*
 
