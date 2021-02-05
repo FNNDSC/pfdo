@@ -150,9 +150,9 @@ Filtering
 
 The ``--fileFilter`` and ``--dirFilter`` apply a filter to the string space of file and directory representations, reducing the original space of
 
-   .. code:: bash
+.. code:: bash
 
-                        "<path>": [<"filesToProcess">]
+    "<path>": [<"filesToProcess">]
 
 to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf node match any of the passed ``--dirFilter`` substrings.
 
