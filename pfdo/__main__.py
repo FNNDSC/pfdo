@@ -8,9 +8,9 @@
 #
 
 import sys, os
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfdo'))
+# sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfdo'))
 
-import  pfdo
+from    .                   import pfdo
 from    argparse            import RawTextHelpFormatter
 from    argparse            import ArgumentParser
 import  pudb
@@ -19,13 +19,13 @@ import  pfmisc
 from    pfmisc._colors      import Colors
 from    pfmisc              import other
 
-str_version = "2.2.2"
+str_version = "3.0.2"
 str_desc = Colors.CYAN + """
 
                                   __      _
                                  / _|    | |
                           _ __  | |_   __| |  ___
-                         | '_ \ |  _| / _` | / _ \ 
+                         | '_ \ |  _| / _` | / _ \
                          | |_) || |  | (_| || (_) |
                          | .__/ |_|   \__,_| \___/
                          | |
@@ -63,7 +63,7 @@ def synopsis(ab_shortOnly = False):
     shortSynopsis =  """
     NAME
 
-	    pfdo
+        pfdo
 
     SYNOPSIS
 
@@ -72,6 +72,7 @@ def synopsis(ab_shortOnly = False):
                      -O|--outputDir <outputDir>             \\
                     [-i|--inputFile <inputFile>]            \\
                     [-f|--fileFilter <filter1,filter2,...>] \\
+                    [-L|--filteFilterLogic AND|OR]          \\
                     [-d|--dirFilter <filter1,filter2,...>]  \\
                     [--outputLeafDir <outputLeafDirFormat>] \\
                     [--threads <numThreads>]                \\
@@ -118,6 +119,10 @@ def synopsis(ab_shortOnly = False):
         turn over the space of files in a directory location, and only files
         that contain this token string in their filename are preserved.
 
+        [-L|--filteFilterLogic AND|OR]
+        The logical operator to apply across the fileFilter operation. Default
+        is OR.
+
         [-d|--dirFilter <someFilter1,someFilter2,...>]
         An additional filter that will further limit any files to process to
         only those files that exist in leaf directory nodes that have some
@@ -160,7 +165,7 @@ def synopsis(ab_shortOnly = False):
         [--followLinks]
         If specified, follow symbolic links.
 
-        -v|--verbosity <level>
+        [-v|--verbosity <level>]
         Set the app verbosity level.
 
             0: No internal output;
@@ -221,6 +226,10 @@ parser.add_argument("-f", "--fileFilter",
                     help    = "a list of comma separated string filters to apply across the input file space",
                     dest    = 'fileFilter',
                     default = '')
+parser.add_argument("-l", "--fileFilterLogic",
+                    help    = "the logic to apply across the file filter",
+                    dest    = 'fileFilterLogic',
+                    default = 'OR')
 parser.add_argument("-d", "--dirFilter",
                     help    = "a list of comma separated string filters to apply across the input dir space",
                     dest    = 'dirFilter',
@@ -282,34 +291,38 @@ parser.add_argument('--version',
                     action  = 'store_true',
                     default = False)
 
-args = parser.parse_args()
+def main(argv=None):
+    args = parser.parse_args()
 
-if args.man or args.synopsis:
-    print(str_desc)
-    if args.man:
-        str_help     = synopsis(False)
-    else:
-        str_help     = synopsis(True)
-    print(str_help)
-    sys.exit(1)
+    if args.man or args.synopsis:
+        print(str_desc)
+        if args.man:
+            str_help     = synopsis(False)
+        else:
+            str_help     = synopsis(True)
+        print(str_help)
+        sys.exit(1)
 
-if args.b_version:
-    print("Version: %s" % str_version)
-    sys.exit(1)
+    if args.b_version:
+        print("Version: %s" % str_version)
+        sys.exit(1)
 
-args.str_version    = str_version
-args.str_desc       = synopsis(True)
+    args.str_version    = str_version
+    args.str_desc       = synopsis(True)
 
-pf_do               = pfdo.pfdo(vars(args))
+    pf_do               = pfdo.pfdo(vars(args))
 
-# And now run it!
-# pudb.set_trace()
-d_pfdo              = pf_do.run(timerStart = True)
+    # And now run it!
+    # pudb.set_trace()
+    d_pfdo              = pf_do.run(timerStart = True)
 
-if args.printElapsedTime:
-    pf_do.dp.qprint(
-            "Elapsed time = %f seconds" %
-            d_pfdo['runTime']
-    )
+    if args.printElapsedTime:
+        pf_do.dp.qprint(
+                "Elapsed time = %f seconds" %
+                d_pfdo['runTime']
+        )
 
-sys.exit(0)
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
