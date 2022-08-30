@@ -8,9 +8,9 @@
 #
 
 import sys, os
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfdo'))
+# sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfdo'))
 
-import  pfdo
+from    .                   import pfdo
 from    argparse            import RawTextHelpFormatter
 from    argparse            import ArgumentParser
 import  pudb
