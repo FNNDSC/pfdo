@@ -215,11 +215,14 @@ class pfdo(object):
         leaf node match any of the passed `--dirFilter` substrings.
 
         The effect of these filters is hierarchical. First, the `fileFilter`
-        is applied across the space of files for a given directory path. The
-        files are subject to a logical OR operation across the comma separated
-        filter argument. Thus, a `fileFilter` of "png,jpg,body" will filter
-        all files that have the substrings of "png" OR "jpg" OR "body" in their
-        filenames.
+        is applied across the space of files for a given directory path. By
+        default, the files are subject to a logical OR operation across th
+        comma separated filter argument. Thus, a `fileFilter` of "png,jpg,body"
+        will filter all files that have the substrings of "png" OR "jpg" OR
+        "body" in their filenames. This logical operation can be set with
+        "--fileFilterLogic AND" to use AND instead. In such a case, a filter
+        of "aparc,mgz" will filter all files that contain "aparc" AND "mgz"
+        in their filenames.
 
         Next, if a `dirFilter` has been specified, the current string path
         corresponding to the filenames being filtered is considered. Each
@@ -243,20 +246,24 @@ class pfdo(object):
         al_file     : list      = at_data[1]
 
         if len(self.args['fileFilter']):
-            al_file     = [x                                                \
+            if self.args['fileFilterLogic'].upper == 'OR':
+                al_file     = [x                                            \
                             for y in self.args['fileFilter'].split(',')     \
                                 for x in al_file if y in x]
+            else:
+                for y in self.args['fileFilter'].split(','):
+                    al_file = [x for x in al_file if y in x]
 
         if len(self.args['dirFilter']):
             l_dirHits   = [os.path.basename(str_path)                       \
                             for y in self.args['dirFilter'].split(',')      \
                                 if y in os.path.basename(str_path)]
             if len(l_dirHits):
-                # Remove any duplicates in the l_dirHits:. Duplicates can
-                # occur if the tokens in the filter expression map more than
-                # once into the leaf node in the <str_path>, as a path that is
+                # Remove any duplicates in the l_dirHits: duplicates can occur
+                # if the tokens in the filter expression map more than once
+                # into the leaf node in the <str_path>, as a path that is
                 #
-                #                   /some/dir/in/the/space/1234567
+                #               /some/dir/in/the/space/1234567
                 #
                 # and a search filter on the dirspace of "123,567"
                 [l_dir.append(x) for x in l_dirHits if x not in l_dir]
@@ -353,7 +360,7 @@ class pfdo(object):
     def run(self, *args, **kwargs) -> dict:
         """
         This base run method should be called by any descendent classes
-        since this contains the calls to the first `pftree` prove as well
+        since this contains the calls to the first `pftree` core as well
         as any (overloaded) file filtering.
         """
         b_status        : bool  = False
@@ -407,31 +414,3 @@ class pfdo(object):
             self.dp.qprint('Returning from pfdo base class run...', level = 1)
 
         return d_ret
-
-class object_factoryCreate:
-    """
-    A class that examines input file string for extension information and
-    returns the relevant convert object.
-    """
-
-    def __init__(self, args):
-        """
-        Parse relevant CLI args.
-        """
-
-        self.C_convert = pfdo(
-            inputFile            = args.inputFile,
-            inputDir             = args.inputDir,
-            outputDir            = args.outputDir,
-            filterExpression     = args.filter,
-            printElapsedTime     = args.printElapsedTime,
-            threads              = args.threads,
-            outputLeafDir        = args.outputLeafDir,
-            test                 = args.test,
-            man                  = args.man,
-            synopsis             = args.synopsis,
-            json                 = args.json,
-            followLinks          = args.followLinks,
-            verbosity            = args.verbosity,
-            version              = args.version
-        )

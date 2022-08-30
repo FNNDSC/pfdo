@@ -74,24 +74,15 @@ Command line arguments
         turn over the space of files in a directory location, and only files
         that contain this token string in their filename are preserved.
 
+        [-L|--filteFilterLogic AND|OR]
+        The logical operator to apply across the fileFilter operation. Default
+        is OR.
+
         [-d|--dirFilter <someFilter1,someFilter2,...>]
-        Similar to the `fileFilter` but applied over the space of leaf node
-        in directory paths. A directory must contain at least one file
-        to be considered.
-
-        If a directory leaf node contains a string that corresponds to any of
-        the filter tokens, a special "hit" is recorded in the file hit list,
-        "%d-<leafnode>". For example, a directory of
-
-                            /some/dir/in/the/inputspace/here1234
-
-        with a `dirFilter` of `1234` will create a "special" hit entry of
-        "%d-here1234" to tag this directory for processing.
-
-        In addition, if a directory is filtered through, all the files in
-        that directory will be added to the filtered file list. If no files
-        are to be added, passing an explicit file filter with an "empty"
-        single string argument, i.e. `--fileFilter " "`, is advised.
+        An additional filter that will further limit any files to process to
+        only those files that exist in leaf directory nodes that have some
+        substring of each of the comma separated <someFilter> in their
+        directory name.
 
         [--outputLeafDir <outputLeafDirFormat>]
         If specified, will apply the <outputLeafDirFormat> to the output
@@ -129,7 +120,7 @@ Command line arguments
         [--followLinks]
         If specified, follow symbolic links.
 
-        -v|--verbosity <level>
+        [-v|--verbosity <level>]
         Set the app verbosity level.
 
             0: No internal output;

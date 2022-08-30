@@ -12,7 +12,7 @@ def readme():
 
 setup(
       name             =   'pfdo',
-      version          =   '2.2.2',
+      version          =   '3.0.0',
       description      =   'Base machinery for performing operations on pftrees',
       long_description =   readme(),
       author           =   'FNNDSC',
@@ -22,7 +22,12 @@ setup(
       install_requires =   ['pfmisc', 'pftree'],
       #test_suite       =   'nose.collector',
       #tests_require    =   ['nose'],
-      scripts          =   ['bin/pfdo'],
+      entry_points={
+          'console_scripts': [
+              'pfdo = pfdo.__main__:main'
+          ]
+      },
+      #   scripts          =   ['bin/pfdo'],
       license          =   'MIT',
       zip_safe         =   False
 )
