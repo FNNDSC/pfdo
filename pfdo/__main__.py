@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# (c) 2020 Fetal-Neonatal Neuroimaging & Developmental Science Center
+# (c) 2022 Fetal-Neonatal Neuroimaging & Developmental Science Center
 #                   Boston Children's Hospital
 #
 #              http://childrenshospital.org/FNNDSC/
@@ -11,6 +11,7 @@ import sys, os
 # sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfdo'))
 
 from    .                   import pfdo
+from    .                   import __pkg, __version__
 from    argparse            import RawTextHelpFormatter
 from    argparse            import ArgumentParser
 import  pudb
@@ -19,7 +20,6 @@ import  pfmisc
 from    pfmisc._colors      import Colors
 from    pfmisc              import other
 
-str_version = "3.0.2"
 str_desc = Colors.CYAN + """
 
                                   __      _
@@ -304,10 +304,10 @@ def main(argv=None):
         sys.exit(1)
 
     if args.b_version:
-        print("Version: %s" % str_version)
+        print("Version: %s" % __version__)
         sys.exit(1)
 
-    args.str_version    = str_version
+    args.str_version    = __version__
     args.str_desc       = synopsis(True)
 
     pf_do               = pfdo.pfdo(vars(args))
