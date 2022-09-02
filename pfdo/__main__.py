@@ -8,10 +8,13 @@
 #
 
 import sys, os
-# sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../pfdo'))
 
-from    .                   import pfdo
-from    .                   import __pkg, __version__
+try:
+    from    .               import pfdo
+    from    .               import __pkg, __version__
+except:
+    from pfdo               import pfdo
+    from __init__           import __pkg, __version__
 from    argparse            import RawTextHelpFormatter
 from    argparse            import ArgumentParser
 import  pudb
@@ -42,7 +45,7 @@ str_desc = Colors.CYAN + """
 
 
                              -- version """ + \
-             Colors.YELLOW + str_version + Colors.CYAN + """ --
+             Colors.YELLOW + __version__ + Colors.CYAN + """ --
 
         'pfdo' is the base infrastructure app/class for walking down some
         dir tree, optionally finding and tagging files that conform to
@@ -58,48 +61,27 @@ str_desc = Colors.CYAN + """
 
 """ + Colors.NO_COLOUR
 
-def synopsis(ab_shortOnly = False):
-    scriptName = os.path.basename(sys.argv[0])
-    shortSynopsis =  """
-    NAME
+package_CLI = """
+         -I|--inputDir <inputDir>                           \\
+         -O|--outputDir <outputDir>                         \\
+        [-i|--inputFile <inputFile>]                        \\
+        [-f|--fileFilter <filter1,filter2,...>]             \\
+        [-L|--filteFilterLogic AND|OR]                      \\
+        [-d|--dirFilter <filter1,filter2,...>]              \\
+        [--outputLeafDir <outputLeafDirFormat>]             \\
+        [--printElapsedTime]                                \\
+        [--threads <numThreads>]                            \\
+        [--test]                                            \\
+        [-x|--man]                                          \\
+        [-y|--synopsis]                                     \\
+        [--overwrite]                                       \\
+        [--followLinks]                                     \\
+        [--verbosity <verbosity>]                           \\
+        [--version]                                         \\
+        [--json]
+"""
 
-        pfdo
-
-    SYNOPSIS
-
-        pfdo                                                \\
-                     -I|--inputDir <inputDir>               \\
-                     -O|--outputDir <outputDir>             \\
-                    [-i|--inputFile <inputFile>]            \\
-                    [-f|--fileFilter <filter1,filter2,...>] \\
-                    [-L|--filteFilterLogic AND|OR]          \\
-                    [-d|--dirFilter <filter1,filter2,...>]  \\
-                    [--outputLeafDir <outputLeafDirFormat>] \\
-                    [--threads <numThreads>]                \\
-                    [--test]                                \\
-                    [-x|--man]                              \\
-                    [-y|--synopsis]                         \\
-                    [--followLinks]                         \\
-                    [--json]
-
-    BRIEF EXAMPLE
-
-        pfdo                                                \\
-            -I /var/www/html/data -f jpg                    \\
-            -O /var/www/html/jpg                            \\
-            --threads 0 --printElapsedTime
-    """
-
-    description =  '''
-    DESCRIPTION
-
-        ``pfdo`` provides the base mechanism for navigating some arbitrary
-        tree, providing the base hooks for operating on (possibly filtered)
-        files in each directory, and saving results in an output tree that
-        reflects the input tree topology.
-
-    ARGS
-
+package_argSynopsis = """
         -I|--inputDir <inputDir>
         Input base directory to traverse.
 
@@ -116,8 +98,9 @@ def synopsis(ab_shortOnly = False):
         [-f|--fileFilter <someFilter1,someFilter2,...>]
         An optional comma-delimated string to filter out files of interest
         from the <inputDir> tree. Each token in the expression is applied in
-        turn over the space of files in a directory location, and only files
-        that contain this token string in their filename are preserved.
+        turn over the space of files in a directory location according to a
+        logical operation, and only files that contain this token string in
+        their filename are preserved.
 
         [-L|--filteFilterLogic AND|OR]
         The logical operator to apply across the fileFilter operation. Default
@@ -176,6 +159,37 @@ def synopsis(ab_shortOnly = False):
                     - read
                     - analyze
                     - write
+"""
+
+def synopsis(ab_shortOnly = False):
+    scriptName = os.path.basename(sys.argv[0])
+    shortSynopsis =  """
+    NAME
+
+        pfdo                                                \\
+
+    SYNOPSIS
+
+        pfdo """ + package_CLI + """
+
+    BRIEF EXAMPLE
+
+        pfdo                                                \\
+            -I /var/www/html/data -f jpg                    \\
+            -O /var/www/html/jpg                            \\
+            --threads 0 --printElapsedTime
+    """
+
+    description =  '''
+    DESCRIPTION
+
+        ``pfdo`` provides the base mechanism for navigating some arbitrary
+        tree, providing the base hooks for operating on (possibly filtered)
+        files in each directory, and saving results in an output tree that
+        reflects the input tree topology.
+
+    ARGS ''' + package_argSynopsis + '''
+
 
     EXAMPLES
 
@@ -210,8 +224,6 @@ def synopsis(ab_shortOnly = False):
         return shortSynopsis
     else:
         return shortSynopsis + description
-
-
 
 parser  = ArgumentParser(description = str_desc, formatter_class = RawTextHelpFormatter)
 
@@ -293,7 +305,6 @@ parser.add_argument('--version',
 
 def main(argv=None):
     args = parser.parse_args()
-
     if args.man or args.synopsis:
         print(str_desc)
         if args.man:
@@ -304,7 +315,7 @@ def main(argv=None):
         sys.exit(1)
 
     if args.b_version:
-        print("Version: %s" % __version__)
+        print("Name:    %s\nVersion: %s" % (__pkg.name, __version__))
         sys.exit(1)
 
     args.str_version    = __version__
