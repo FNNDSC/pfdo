@@ -238,7 +238,7 @@ parser.add_argument("-f", "--fileFilter",
                     help    = "a list of comma separated string filters to apply across the input file space",
                     dest    = 'fileFilter',
                     default = '')
-parser.add_argument("-l", "--fileFilterLogic",
+parser.add_argument("-L", "--fileFilterLogic",
                     help    = "the logic to apply across the file filter",
                     dest    = 'fileFilterLogic',
                     default = 'OR')
