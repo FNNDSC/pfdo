@@ -23,12 +23,12 @@ import  pfmisc
 from    pfmisc._colors      import Colors
 from    pfmisc              import other
 
-str_desc = Colors.CYAN + """
+str_desc = Colors.CYAN + f'''
 
                                   __      _
                                  / _|    | |
                           _ __  | |_   __| |  ___
-                         | '_ \ |  _| / _` | / _ \
+                         | '_ \ |  _| / _` | / _ \ 
                          | |_) || |  | (_| || (_) |
                          | .__/ |_|   \__,_| \___/
                          | |
@@ -44,8 +44,8 @@ str_desc = Colors.CYAN + """
         that  preserves the input directory structure.
 
 
-                             -- version """ + \
-             Colors.YELLOW + __version__ + Colors.CYAN + """ --
+                             -- version ''' + \
+             Colors.YELLOW + __version__ + Colors.CYAN + ''' --
 
         'pfdo' is the base infrastructure app/class for walking down some
         dir tree, optionally finding and tagging files that conform to
@@ -59,41 +59,37 @@ str_desc = Colors.CYAN + """
         structure.
 
 
-""" + Colors.NO_COLOUR
+''' + Colors.NO_COLOUR
 
-package_CLI = """
-         -I|--inputDir <inputDir>                           \\
-         -O|--outputDir <outputDir>                         \\
-        [-i|--inputFile <inputFile>]                        \\
-        [-f|--fileFilter <filter1,filter2,...>]             \\
-        [-L|--filteFilterLogic AND|OR]                      \\
-        [-d|--dirFilter <filter1,filter2,...>]              \\
-        [--outputLeafDir <outputLeafDirFormat>]             \\
-        [--printElapsedTime]                                \\
-        [--threads <numThreads>]                            \\
-        [--test]                                            \\
-        [-x|--man]                                          \\
-        [-y|--synopsis]                                     \\
-        [--overwrite]                                       \\
-        [--followLinks]                                     \\
-        [--verbosity <verbosity>]                           \\
-        [--version]                                         \\
+package_CLIcore = """
+        --inputDir <inputDir>                                                   \\
+        --outputDir <outputDir>                                                 \\
+        [--inputFile <inputFile>]                                               \\
+        [--printElapsedTime]                                                    \\
+        [--man]                                                                 \\
+        [--synopsis]                                                            \\
+        [--verbosity <verbosity>]                                               \\
+        [--version]                                                             \\
         [--json]
 """
 
-package_argSynopsis = """
-        -I|--inputDir <inputDir>
-        Input base directory to traverse.
+package_CLIself = '''
+        [--overwrite]                                                           \\
+        [--followLinks]                                                         \\
+        [--fileFilter <filter1,filter2,...>]                                    \\
+        [--filteFilterLogic AND|OR]                                             \\
+        [--dirFilter <filter1,filter2,...>]                                     \\
+        [--outputLeafDir <outputLeafDirFormat>]                                 \\
+        [--threads <numThreads>]                                                \\
+        [--test]                                                                \\'''
 
-        -O|--outputDir <outputDir>
-        The output root directory that will contain a tree structure identical
-        to the input directory, and each "leaf" node will contain the analysis
-        results.
+package_argSynopsisSelf = """
+        [--followLinks]
+        If specified, follow symbolic links; otherwise symbolic links are
+        bypassed.
 
-        [-i|--inputFile <inputFile>]
-        An optional <inputFile> specified relative to the <inputDir>. If
-        specified, then do not perform a directory walk, but convert only
-        this file.
+        [--overwrite]
+        If specified, allow for overwrite of existing files.
 
         [-f|--fileFilter <someFilter1,someFilter2,...>]
         An optional comma-delimated string to filter out files of interest
@@ -135,6 +131,21 @@ package_argSynopsis = """
         [--threads <numThreads>]
         If specified, break the innermost analysis loop into <numThreads>
         threads.
+"""
+
+package_argSynopsisCore = """
+        -I|--inputDir <inputDir>
+        Input base directory to traverse.
+
+        -O|--outputDir <outputDir>
+        The output root directory that will contain a tree structure identical
+        to the input directory, and each "leaf" node will contain the analysis
+        results.
+
+        [-i|--inputFile <inputFile>]
+        An optional <inputFile> specified relative to the <inputDir>. If
+        specified, then do not perform a directory walk, but convert only
+        this file.
 
         [-x|--man]
         Show full help.
@@ -144,9 +155,6 @@ package_argSynopsis = """
 
         [--json]
         If specified, output a JSON dump of final return.
-
-        [--followLinks]
-        If specified, follow symbolic links.
 
         [-v|--verbosity <level>]
         Set the app verbosity level.
@@ -166,18 +174,19 @@ def synopsis(ab_shortOnly = False):
     shortSynopsis =  """
     NAME
 
-        pfdo                                                \\
+        pfdo
 
     SYNOPSIS
 
-        pfdo """ + package_CLI + """
+        pfdo \ """ + package_CLIself + package_CLIcore + """
 
     BRIEF EXAMPLE
 
-        pfdo                                                \\
-            -I /var/www/html/data -f jpg                    \\
-            -O /var/www/html/jpg                            \\
-            --threads 0 --printElapsedTime
+        pfdo                                                                    \\
+            --inputDir /var/www/html/data                                       \\
+            --fileFilter jpg                                                    \\
+            --outputDir /var/www/html/jpg                                       \\
+            --threads 0 --printElapsedTime --test
     """
 
     description =  '''
@@ -188,16 +197,18 @@ def synopsis(ab_shortOnly = False):
         files in each directory, and saving results in an output tree that
         reflects the input tree topology.
 
-    ARGS ''' + package_argSynopsis + '''
+    ARGS ''' + package_argSynopsisCore + package_argSynopsisSelf + '''
 
 
     EXAMPLES
 
     Perform a `pfdo` down some input directory:
 
-        pfdo                                                \\
-            -I /var/www/html/data -f jpg                    \\
-            -O /tmp/jpg --test --json                       \\
+        pfdo                                                                    \\
+            --inputDir /var/www/html/data                                       \\
+            --fileFilter jpg                                                    \\
+            --outputDir /tmp/jpg                                                \\
+            --test --json                                                       \\
             --threads 0 --printElapsedTime
 
     The above will find all files in the tree structure rooted at
@@ -207,9 +218,11 @@ def synopsis(ab_shortOnly = False):
     the original input. This touched file will be prefixed with the
     string "analyzed-".
 
-        pfdo                                                \\
-            -I $(pwd)/raw  -d 100307 -f " "                 \\
-            -O $(pwd)/out --test --json                     \\
+        pfdo                                                                    \\
+            --inputDir $(pwd)/raw                                               \\
+            --dirFilter 100307                                                  \\
+            --fileFilter " "                                                    \\
+            --outputDir $(pwd)/out --test --json                                \\
             --threads 0 --printElapsedTime
 
     This will consider each directory in the input tree space that
@@ -225,85 +238,94 @@ def synopsis(ab_shortOnly = False):
     else:
         return shortSynopsis + description
 
-parser  = ArgumentParser(description = str_desc, formatter_class = RawTextHelpFormatter)
+parserCore  = ArgumentParser(description        = 'Core I/O',
+                             formatter_class    = RawTextHelpFormatter,
+                             add_help           = False)
+parserSelf  = ArgumentParser(description        = 'Self specific',
+                             formatter_class    = RawTextHelpFormatter,
+                             add_help           = False)
 
-parser.add_argument("-I", "--inputDir",
+parserCore.add_argument("--inputDir",
                     help    = "input dir",
                     dest    = 'inputDir')
-parser.add_argument("-i", "--inputFile",
+parserCore.add_argument("--inputFile",
                     help    = "input file",
                     dest    = 'inputFile',
                     default = '')
-parser.add_argument("-f", "--fileFilter",
-                    help    = "a list of comma separated string filters to apply across the input file space",
-                    dest    = 'fileFilter',
-                    default = '')
-parser.add_argument("-L", "--fileFilterLogic",
-                    help    = "the logic to apply across the file filter",
-                    dest    = 'fileFilterLogic',
-                    default = 'OR')
-parser.add_argument("-d", "--dirFilter",
-                    help    = "a list of comma separated string filters to apply across the input dir space",
-                    dest    = 'dirFilter',
-                    default = '')
-parser.add_argument("-O", "--outputDir",
+parserCore.add_argument("--outputDir",
                     help    = "output image directory",
                     dest    = 'outputDir',
                     default = '')
-parser.add_argument("--printElapsedTime",
-                    help    = "print program run time",
-                    dest    = 'printElapsedTime',
-                    action  = 'store_true',
-                    default = False)
-parser.add_argument("--threads",
-                    help    = "number of threads for innermost loop processing",
-                    dest    = 'threads',
-                    default = "0")
-parser.add_argument("--outputLeafDir",
-                    help    = "formatting spec for output leaf directory",
-                    dest    = 'outputLeafDir',
-                    default = "")
-parser.add_argument("--test",
-                    help    = "test",
-                    dest    = 'test',
-                    action  = 'store_true',
-                    default = False)
-parser.add_argument("-x", "--man",
+parserCore.add_argument("--man",
                     help    = "man",
                     dest    = 'man',
                     action  = 'store_true',
                     default = False)
-parser.add_argument("-y", "--synopsis",
+parserCore.add_argument("--synopsis",
                     help    = "short synopsis",
                     dest    = 'synopsis',
                     action  = 'store_true',
                     default = False)
-parser.add_argument("--json",
+parserCore.add_argument("--json",
                     help    = "output final return in json",
                     dest    = 'json',
                     action  = 'store_true',
                     default = False)
-parser.add_argument("--overwrite",
-                    help    = "overwrite files if already existing",
-                    dest    = 'overwrite',
-                    action  = 'store_true',
-                    default = False)
-parser.add_argument("--followLinks",
-                    help    = "follow symbolic links",
-                    dest    = 'followLinks',
-                    action  = 'store_true',
-                    default = False)
-parser.add_argument("-v", "--verbosity",
+parserCore.add_argument("--verbosity",
                     help    = "verbosity level for app",
                     dest    = 'verbosity',
                     default = "1")
-parser.add_argument('--version',
+parserCore.add_argument('--version',
                     help    = 'if specified, print version number',
                     dest    = 'b_version',
                     action  = 'store_true',
                     default = False)
 
+parserSelf.add_argument("--overwrite",
+                    help    = "overwrite files if already existing",
+                    dest    = 'overwrite',
+                    action  = 'store_true',
+                    default = False)
+parserSelf.add_argument("--followLinks",
+                    help    = "follow symbolic links",
+                    dest    = 'followLinks',
+                    action  = 'store_true',
+                    default = False)
+parserSelf.add_argument("--fileFilter",
+                    help    = "a list of comma separated string filters to apply across the input file space",
+                    dest    = 'fileFilter',
+                    default = '')
+parserSelf.add_argument("--fileFilterLogic",
+                    help    = "the logic to apply across the file filter",
+                    dest    = 'fileFilterLogic',
+                    default = 'OR')
+parserSelf.add_argument("--dirFilter",
+                    help    = "a list of comma separated string filters to apply across the input dir space",
+                    dest    = 'dirFilter',
+                    default = '')
+parserSelf.add_argument("--printElapsedTime",
+                    help    = "print program run time",
+                    dest    = 'printElapsedTime',
+                    action  = 'store_true',
+                    default = False)
+parserSelf.add_argument("--threads",
+                    help    = "number of threads for innermost loop processing",
+                    dest    = 'threads',
+                    default = "0")
+parserSelf.add_argument("--outputLeafDir",
+                    help    = "formatting spec for output leaf directory",
+                    dest    = 'outputLeafDir',
+                    default = "")
+parserSelf.add_argument("--test",
+                    help    = "test",
+                    dest    = 'test',
+                    action  = 'store_true',
+                    default = False)
+
 def main(argv=None):
+    parser  = ArgumentParser(description        = str_desc,
+                             formatter_class    = RawTextHelpFormatter,
+                             parents            = [parserCore, parserSelf])
     args = parser.parse_args()
     if args.man or args.synopsis:
         print(str_desc)
