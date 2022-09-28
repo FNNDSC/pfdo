@@ -221,13 +221,11 @@ def synopsis(ab_shortOnly = False):
         pfdo                                                                    \\
             --inputDir $(pwd)/raw                                               \\
             --dirFilter 100307                                                  \\
-            --fileFilter " "                                                    \\
             --outputDir $(pwd)/out --test --json                                \\
             --threads 0 --printElapsedTime
 
-    This will consider each directory in the input tree space that
-    contains files, but will "tag" any leaf node directory that
-    contains the string "100307" with a tag "file" "%d-100307".
+    Here, all files in (all) directories that contain the string ``100307``
+    will be targetted.
 
     Finally the elapsed time and a JSON output are printed.
 

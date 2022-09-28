@@ -12,8 +12,8 @@ def readme():
 
 setup(
       name             =   'pfdo',
-      version          =   '3.2.8',
-      description      =   'Base machinery for performing operations on pftrees',
+      version          =   '3.2.10',
+      description      =   'Base machinery for using a pftree object to good purpose',
       long_description =   readme(),
       author           =   'FNNDSC',
       author_email     =   'dev@babymri.org',
