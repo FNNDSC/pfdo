@@ -267,6 +267,9 @@ class pfdo(object):
                 #
                 # and a search filter on the dirspace of "123,567"
                 [l_dir.append(x) for x in l_dirHits if x not in l_dir]
+                # Now, filter the al_file to only those files that exist
+                # in the l_dirHits
+                al_file =   [x for y in l_dirHits for x in al_file if y in x]
             else:
                 # If no dir hits for this dir, then we zero out the
                 # file filter
