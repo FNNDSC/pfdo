@@ -246,7 +246,7 @@ class pfdo(object):
         al_file     : list      = at_data[1]
 
         if len(self.args['fileFilter']):
-            if self.args['fileFilterLogic'].upper == 'OR':
+            if self.args['fileFilterLogic'].upper() == 'OR':
                 al_file     = [x                                            \
                             for y in self.args['fileFilter'].split(',')     \
                                 for x in al_file if y in x]
