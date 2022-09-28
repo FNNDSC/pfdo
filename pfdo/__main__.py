@@ -91,14 +91,14 @@ package_argSynopsisSelf = """
         [--overwrite]
         If specified, allow for overwrite of existing files.
 
-        [-f|--fileFilter <someFilter1,someFilter2,...>]
+        [--fileFilter <someFilter1,someFilter2,...>]
         An optional comma-delimated string to filter out files of interest
         from the <inputDir> tree. Each token in the expression is applied in
         turn over the space of files in a directory location according to a
         logical operation, and only files that contain this token string in
         their filename are preserved.
 
-        [-L|--filteFilterLogic AND|OR]
+        [--filteFilterLogic AND|OR]
         The logical operator to apply across the fileFilter operation. Default
         is OR.
 
@@ -134,29 +134,29 @@ package_argSynopsisSelf = """
 """
 
 package_argSynopsisCore = """
-        -I|--inputDir <inputDir>
+        --inputDir <inputDir>
         Input base directory to traverse.
 
-        -O|--outputDir <outputDir>
+        --outputDir <outputDir>
         The output root directory that will contain a tree structure identical
         to the input directory, and each "leaf" node will contain the analysis
         results.
 
-        [-i|--inputFile <inputFile>]
+        [--inputFile <inputFile>]
         An optional <inputFile> specified relative to the <inputDir>. If
         specified, then do not perform a directory walk, but convert only
         this file.
 
-        [-x|--man]
+        [--man]
         Show full help.
 
-        [-y|--synopsis]
+        [--synopsis]
         Show brief help.
 
         [--json]
         If specified, output a JSON dump of final return.
 
-        [-v|--verbosity <level>]
+        [--verbosity <level>]
         Set the app verbosity level.
 
             0: No internal output;
