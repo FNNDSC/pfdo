@@ -54,27 +54,55 @@ Command line arguments
 
 .. code:: html
 
-
-        -I|--inputDir <inputDir>
+        --inputDir <inputDir>
         Input base directory to traverse.
 
-        -O|--outputDir <outputDir>
+        --outputDir <outputDir>
         The output root directory that will contain a tree structure identical
         to the input directory, and each "leaf" node will contain the analysis
         results.
 
-        [-i|--inputFile <inputFile>]
+        [--inputFile <inputFile>]
         An optional <inputFile> specified relative to the <inputDir>. If
         specified, then do not perform a directory walk, but convert only
         this file.
 
-        [-f|--fileFilter <someFilter1,someFilter2,...>]
+        [--man]
+        Show full help.
+
+        [--synopsis]
+        Show brief help.
+
+        [--json]
+        If specified, output a JSON dump of final return.
+
+        [--verbosity <level>]
+        Set the app verbosity level.
+
+            0: No internal output;
+            1: Run start / stop output notification;
+            2: As with level '1' but with simpleProgress bar in 'pftree';
+            3: As with level '2' but with list of input dirs/files in 'pftree';
+            5: As with level '3' but with explicit file logging for
+                    - read
+                    - analyze
+                    - write
+
+        [--followLinks]
+        If specified, follow symbolic links; otherwise symbolic links are
+        bypassed.
+
+        [--overwrite]
+        If specified, allow for overwrite of existing files.
+
+        [--fileFilter <someFilter1,someFilter2,...>]
         An optional comma-delimated string to filter out files of interest
         from the <inputDir> tree. Each token in the expression is applied in
-        turn over the space of files in a directory location, and only files
-        that contain this token string in their filename are preserved.
+        turn over the space of files in a directory location according to a
+        logical operation, and only files that contain this token string in
+        their filename are preserved.
 
-        [-L|--filteFilterLogic AND|OR]
+        [--filteFilterLogic AND|OR]
         The logical operator to apply across the fileFilter operation. Default
         is OR.
 
@@ -92,9 +120,9 @@ Command line arguments
 
         This is a formatting spec, so
 
-            --outputLeafDir 'preview-%%s'
+            --outputLeafDir 'preview-%s'
 
-        where %%s is the original leaf directory node, will prefix each
+        where %s is the original leaf directory node, will prefix each
         final directory containing output with the text 'preview-' which
         can be useful in describing some features of the output set.
 
@@ -107,30 +135,6 @@ Command line arguments
         [--threads <numThreads>]
         If specified, break the innermost analysis loop into <numThreads>
         threads.
-
-        [-x|--man]
-        Show full help.
-
-        [-y|--synopsis]
-        Show brief help.
-
-        [--json]
-        If specified, output a JSON dump of final return.
-
-        [--followLinks]
-        If specified, follow symbolic links.
-
-        [-v|--verbosity <level>]
-        Set the app verbosity level.
-
-            0: No internal output;
-            1: Run start / stop output notification;
-            2: As with level '1' but with simpleProgress bar in 'pftree';
-            3: As with level '2' but with list of input dirs/files in 'pftree';
-            5: As with level '3' but with explicit file logging for
-                    - read
-                    - analyze
-                    - write
 
 
 Examples
@@ -145,7 +149,7 @@ The ``--fileFilter`` and ``--dirFilter`` apply a filter to the string space of f
 
     "<path>": [<"filesToProcess">]
 
-to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf node match any of the passed ``--dirFilter`` substrings.
+to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf nodes match any of the passed ``--dirFilter`` substrings. Note that the filter is applied to the _leaf_, i.e. terminal directory node!
 
 The effect of these filters is hierarchical. First, the ``fileFilter`` is applied across the space of files for a given directory path. Each comma separated token is used as a substring search across the file name - in any order. The token search is by default a logical OR operation. Thus, a ``--fileFilter`` of ``png,jpg,body`` will filter all files that have the substrings of ``png`` _OR_ ``jpg`` _OR_ ``body`` anywhere in their filenames. This operation can be changed to a logical AND with a ``--fileFilterLogic AND`` - in which case a ``--fileFilter aparc,mgz,aseg`` will filter all files that contain ``aparc`` _AND_ ``aseg`` _AND_ ``mgz`` in their names. Note that mixing boolean logic is not supported at this time.
 
@@ -160,9 +164,9 @@ Run down a directory tree and touch all the files in the input tree that are ``j
 
 .. code:: bash
 
-        pfdo                                                \
-            -I /var/www/html/data -f jpg                    \
-            -O /tmp/jpg --test --json                       \
+        pfdo                                                                    \
+            --inputDir /var/www/html/data --fileFilter jpg                      \
+            --outputDir /tmp/jpg --test --json                                  \
             --threads 0 --printElapsedTime
 
 
@@ -171,12 +175,12 @@ string ``analyzed-``.
 
 .. code:: bash
 
-        pfdo                                                \
-            -I $(pwd)/raw  -d 100307 -f " "                 \
-            -O $(pwd)/out --test --json                     \
+        pfdo                                                                \
+            --inputDir $(pwd)/raw  --dirFilter 100307 --fileFilter ""       \
+            --outputDir $(pwd)/out --test --json                            \
             --threads 0 --printElapsedTime
 
-This will consider each directory in the input tree space that contains files, but will "tag" any leaf node directory that contains the string ``100307`` with a tag "file" ``%d-100307``.
+Here, all files in (all) directories that contain the substring ``100307`` will be targetted.
 
 Finally the elapsed time and a JSON output are printed.
 
