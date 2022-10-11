@@ -53,47 +53,37 @@ Command line arguments
 ----------------------
 
 .. code:: html
-
         --inputDir <inputDir>
-        Input base directory to traverse.
+        Input directory to examine. The downstream nested structure of this
+        directory is examined and recreated in the <outputDir>.
 
-        --outputDir <outputDir>
-        The output root directory that will contain a tree structure identical
-        to the input directory, and each "leaf" node will contain the analysis
-        results.
+        [--outputDir <outputDir>]
+        The directory to contain a tree structure identical to the input
+        tree structure, and which contains all output files from the
+        per-input-dir processing.
+
+        [--test]
+        If specified, run the "dummy" internal callback loop triad. The test
+        flow simply tags files in some inputDir tree and "touches" them to a
+        reconstiuted tree in the output directory, prefixed with the text
+        "analyzed-".
+
+
+        [--maxdepth <dirDepth>]
+        The maximum depth to descend relative to the <inputDir>. Note, that
+        this counts from zero! Default of '-1' implies transverse the entire
+        directory tree.
+
+        [--relativeDir]
+        A flag argument. If passed (i.e. True), then the dictionary key values
+        are taken to be relative to the <inputDir>, i.e. the key values
+        will not contain the <inputDir>; otherwise the key values will
+        contain the <inputDir>.
 
         [--inputFile <inputFile>]
         An optional <inputFile> specified relative to the <inputDir>. If
-        specified, then do not perform a directory walk, but convert only
-        this file.
-
-        [--man]
-        Show full help.
-
-        [--synopsis]
-        Show brief help.
-
-        [--json]
-        If specified, output a JSON dump of final return.
-
-        [--verbosity <level>]
-        Set the app verbosity level.
-
-            0: No internal output;
-            1: Run start / stop output notification;
-            2: As with level '1' but with simpleProgress bar in 'pftree';
-            3: As with level '2' but with list of input dirs/files in 'pftree';
-            5: As with level '3' but with explicit file logging for
-                    - read
-                    - analyze
-                    - write
-
-        [--followLinks]
-        If specified, follow symbolic links; otherwise symbolic links are
-        bypassed.
-
-        [--overwrite]
-        If specified, allow for overwrite of existing files.
+        specified, then do not perform a directory walk, but target this
+        specific file.
 
         [--fileFilter <someFilter1,someFilter2,...>]
         An optional comma-delimated string to filter out files of interest
@@ -106,11 +96,15 @@ Command line arguments
         The logical operator to apply across the fileFilter operation. Default
         is OR.
 
-        [-d|--dirFilter <someFilter1,someFilter2,...>]
+        [--dirFilter <someFilter1,someFilter2,...>]
         An additional filter that will further limit any files to process to
         only those files that exist in leaf directory nodes that have some
         substring of each of the comma separated <someFilter> in their
         directory name.
+
+        [--dirFilterLogic AND|OR]
+        The logical operator to apply across the dirFilter operation. Default
+        is OR.
 
         [--outputLeafDir <outputLeafDirFormat>]
         If specified, will apply the <outputLeafDirFormat> to the output
@@ -120,22 +114,49 @@ Command line arguments
 
         This is a formatting spec, so
 
-            --outputLeafDir 'preview-%s'
+            --outputLeafDir 'preview-%%s'
 
-        where %s is the original leaf directory node, will prefix each
+        where %%s is the original leaf directory node, will prefix each
         final directory containing output with the text 'preview-' which
         can be useful in describing some features of the output set.
 
-        [--test]
-        If specified, run the "dummy" internal callback loop triad. The test
-        flow simply tags files in some inputDir tree and "touches" them to a
-        reconstiuted tree in the output directory, prefixed with the text
-        "analyzed-".
-
         [--threads <numThreads>]
         If specified, break the innermost analysis loop into <numThreads>
-        threads.
+        threads. Please note the following caveats:
 
+            * Only thread if you have a high CPU analysis loop. Note that
+              the input file read and output file write loops are not
+              threaded -- only the analysis loop is threaded. Thus, if the
+              bulk of execution time is in file IO, threading will not
+              really help.
+
+            * Threading will change the nature of the innermost looping
+              across the problem domain, with the result that *all* of the
+              problem data will be read into memory! That means potentially
+              all the target input file data across the entire input directory
+              tree.
+
+        [--json]
+        If specified, do a JSON dump of the entire return payload.
+
+        [--followLinks]
+        If specified, follow symbolic links.
+
+        [--overwrite]
+        If specified, allow for overwriting of existing files
+
+        [--man]
+        Show full help.
+
+        [--synopsis]
+        Show brief help.
+
+        [--verbosity <level>]
+        Set the app verbosity level. This ranges from 0...<N> where internal
+        log messages with a level=<M> will only display if M <= N. In this
+        manner increasing the level here can be used to show more and more
+        debugging info, assuming that debug messages in the code have been
+        tagged with a level.
 
 Examples
 --------
@@ -149,11 +170,11 @@ The ``--fileFilter`` and ``--dirFilter`` apply a filter to the string space of f
 
     "<path>": [<"filesToProcess">]
 
-to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf nodes match any of the passed ``--dirFilter`` substrings. Note that the filter is applied to the _leaf_, i.e. terminal directory node!
+to only those paths and files that are relevant to the operation being performed. Two filters are understood, a ``fileFilter`` that filters filenames that match any of the passed search substrings from the CLI ``--fileFilter``, and a ``dirFilter`` that filters directories whose leaf nodes match any of the passed ``--dirFilter`` substrings.
 
 The effect of these filters is hierarchical. First, the ``fileFilter`` is applied across the space of files for a given directory path. Each comma separated token is used as a substring search across the file name - in any order. The token search is by default a logical OR operation. Thus, a ``--fileFilter`` of ``png,jpg,body`` will filter all files that have the substrings of ``png`` _OR_ ``jpg`` _OR_ ``body`` anywhere in their filenames. This operation can be changed to a logical AND with a ``--fileFilterLogic AND`` - in which case a ``--fileFilter aparc,mgz,aseg`` will filter all files that contain ``aparc`` _AND_ ``aseg`` _AND_ ``mgz`` in their names. Note that mixing boolean logic is not supported at this time.
 
-Next, if a ``dirFilter`` has been specified, the current string path corresponding to the filenames being filtered is considered. Each string in the comma separated ``dirFilter`` list is exacted, and if the basename of the working directory contains the filter substring, the (filtered) files are conserved. If the basename of the working directory does not contain any of the ``dirFilter`` substrings, the file list is discarded.
+Next, if a ``dirFilter`` has been specified, the current string path corresponding to the filenames being filtered is considered. Each string in the comma separated ``dirFilter`` list is exacted, and if the basename of the working directory contains the filter substring, the (filtered) files are conserved. If the basename of the working directory does not contain any of the ``dirFilter`` substrings, the file list is discarded. Similarly ``dirFilterLogic`` specifies the logical operation to perform on the directory filter tokens.
 
 Thus, a ``--dirFilter 100307,100556`` and a ``--fileFilter png,jpg`` will reduce the space of files to process to ONLY files that have a parent directory of ``100307`` OR ``100556`` AND that contain either the string ``png`` OR ``jpg`` in their file names.
 
