@@ -23,6 +23,14 @@ import  pfmisc
 from    pfmisc._colors      import Colors
 from    pfmisc              import other
 
+import  pftree
+from    pftree.__main__     import  package_CLIcore,        \
+                                    package_IOcore,         \
+                                    package_argSynopsisIO,  \
+                                    package_argSynopsisCore,\
+                                    parserIO,               \
+                                    parserCore
+
 str_desc = Colors.CYAN + f'''
 
                                   __      _
@@ -58,116 +66,71 @@ str_desc = Colors.CYAN + f'''
         are reconstructed in an output directory, preserving directory
         structure.
 
+        In many ways, this module is a slight variation on 'pftree' on which
+        it builds. It can be thought of as less of a descendent and more of a
+        sibling.
+
 
 ''' + Colors.NO_COLOUR
 
-package_CLIcore = """
-        --inputDir <inputDir>                                                   \\
-        --outputDir <outputDir>                                                 \\
-        [--inputFile <inputFile>]                                               \\
-        [--printElapsedTime]                                                    \\
-        [--man]                                                                 \\
-        [--synopsis]                                                            \\
-        [--verbosity <verbosity>]                                               \\
-        [--version]                                                             \\
-        [--json]
-"""
+# package_CLIcore = """
+#         --inputDir <inputDir>                                                   \\
+#         --outputDir <outputDir>                                                 \\
+#         [--inputFile <inputFile>]                                               \\
+#         [--printElapsedTime]                                                    \\
+#         [--man]                                                                 \\
+#         [--synopsis]                                                            \\
+#         [--verbosity <verbosity>]                                               \\
+#         [--version]                                                             \\
+#         [--json]
+# """
 
 package_CLIself = '''
-        [--overwrite]                                                           \\
-        [--followLinks]                                                         \\
-        [--fileFilter <filter1,filter2,...>]                                    \\
-        [--filteFilterLogic AND|OR]                                             \\
-        [--dirFilter <filter1,filter2,...>]                                     \\
-        [--outputLeafDir <outputLeafDirFormat>]                                 \\
-        [--threads <numThreads>]                                                \\
         [--test]                                                                \\'''
 
 package_argSynopsisSelf = """
-        [--followLinks]
-        If specified, follow symbolic links; otherwise symbolic links are
-        bypassed.
-
-        [--overwrite]
-        If specified, allow for overwrite of existing files.
-
-        [--fileFilter <someFilter1,someFilter2,...>]
-        An optional comma-delimated string to filter out files of interest
-        from the <inputDir> tree. Each token in the expression is applied in
-        turn over the space of files in a directory location according to a
-        logical operation, and only files that contain this token string in
-        their filename are preserved.
-
-        [--filteFilterLogic AND|OR]
-        The logical operator to apply across the fileFilter operation. Default
-        is OR.
-
-        [-d|--dirFilter <someFilter1,someFilter2,...>]
-        An additional filter that will further limit any files to process to
-        only those files that exist in leaf directory nodes that have some
-        substring of each of the comma separated <someFilter> in their
-        directory name.
-
-        [--outputLeafDir <outputLeafDirFormat>]
-        If specified, will apply the <outputLeafDirFormat> to the output
-        directories containing data. This is useful to blanket describe
-        final output directories with some descriptive text, such as
-        'anon' or 'preview'.
-
-        This is a formatting spec, so
-
-            --outputLeafDir 'preview-%s'
-
-        where %s is the original leaf directory node, will prefix each
-        final directory containing output with the text 'preview-' which
-        can be useful in describing some features of the output set.
-
         [--test]
         If specified, run the "dummy" internal callback loop triad. The test
         flow simply tags files in some inputDir tree and "touches" them to a
         reconstiuted tree in the output directory, prefixed with the text
         "analyzed-".
-
-        [--threads <numThreads>]
-        If specified, break the innermost analysis loop into <numThreads>
-        threads.
 """
 
-package_argSynopsisCore = """
-        --inputDir <inputDir>
-        Input base directory to traverse.
+# package_argSynopsisCore = """
+#         --inputDir <inputDir>
+#         Input base directory to traverse.
 
-        --outputDir <outputDir>
-        The output root directory that will contain a tree structure identical
-        to the input directory, and each "leaf" node will contain the analysis
-        results.
+#         --outputDir <outputDir>
+#         The output root directory that will contain a tree structure identical
+#         to the input directory, and each "leaf" node will contain the analysis
+#         results.
 
-        [--inputFile <inputFile>]
-        An optional <inputFile> specified relative to the <inputDir>. If
-        specified, then do not perform a directory walk, but convert only
-        this file.
+#         [--inputFile <inputFile>]
+#         An optional <inputFile> specified relative to the <inputDir>. If
+#         specified, then do not perform a directory walk, but convert only
+#         this file.
 
-        [--man]
-        Show full help.
+#         [--man]
+#         Show full help.
 
-        [--synopsis]
-        Show brief help.
+#         [--synopsis]
+#         Show brief help.
 
-        [--json]
-        If specified, output a JSON dump of final return.
+#         [--json]
+#         If specified, output a JSON dump of final return.
 
-        [--verbosity <level>]
-        Set the app verbosity level.
+#         [--verbosity <level>]
+#         Set the app verbosity level.
 
-            0: No internal output;
-            1: Run start / stop output notification;
-            2: As with level '1' but with simpleProgress bar in 'pftree';
-            3: As with level '2' but with list of input dirs/files in 'pftree';
-            5: As with level '3' but with explicit file logging for
-                    - read
-                    - analyze
-                    - write
-"""
+#             0: No internal output;
+#             1: Run start / stop output notification;
+#             2: As with level '1' but with simpleProgress bar in 'pftree';
+#             3: As with level '2' but with list of input dirs/files in 'pftree';
+#             5: As with level '3' but with explicit file logging for
+#                     - read
+#                     - analyze
+#                     - write
+# """
 
 def synopsis(ab_shortOnly = False):
     scriptName = os.path.basename(sys.argv[0])
@@ -178,7 +141,7 @@ def synopsis(ab_shortOnly = False):
 
     SYNOPSIS
 
-        pfdo \ """ + package_CLIself + package_CLIcore + """
+        pfdo \ """ + package_IOcore + package_CLIself +  package_CLIcore + """
 
     BRIEF EXAMPLE
 
@@ -197,7 +160,7 @@ def synopsis(ab_shortOnly = False):
         files in each directory, and saving results in an output tree that
         reflects the input tree topology.
 
-    ARGS ''' + package_argSynopsisCore + package_argSynopsisSelf + '''
+    ARGS ''' + package_argSynopsisIO + package_argSynopsisSelf + package_argSynopsisCore + '''
 
 
     EXAMPLES
@@ -236,84 +199,85 @@ def synopsis(ab_shortOnly = False):
     else:
         return shortSynopsis + description
 
-parserCore  = ArgumentParser(description        = 'Core I/O',
-                             formatter_class    = RawTextHelpFormatter,
-                             add_help           = False)
+# parserCore  = ArgumentParser(description        = 'Core I/O',
+#                              formatter_class    = RawTextHelpFormatter,
+#                              add_help           = False)
 parserSelf  = ArgumentParser(description        = 'Self specific',
                              formatter_class    = RawTextHelpFormatter,
                              add_help           = False)
 
-parserCore.add_argument("--inputDir",
-                    help    = "input dir",
-                    dest    = 'inputDir')
-parserCore.add_argument("--inputFile",
-                    help    = "input file",
-                    dest    = 'inputFile',
-                    default = '')
-parserCore.add_argument("--outputDir",
-                    help    = "output image directory",
-                    dest    = 'outputDir',
-                    default = '')
-parserCore.add_argument("--man",
-                    help    = "man",
-                    dest    = 'man',
-                    action  = 'store_true',
-                    default = False)
-parserCore.add_argument("--synopsis",
-                    help    = "short synopsis",
-                    dest    = 'synopsis',
-                    action  = 'store_true',
-                    default = False)
-parserCore.add_argument("--json",
-                    help    = "output final return in json",
-                    dest    = 'json',
-                    action  = 'store_true',
-                    default = False)
-parserCore.add_argument("--verbosity",
-                    help    = "verbosity level for app",
-                    dest    = 'verbosity',
-                    default = "1")
-parserCore.add_argument('--version',
-                    help    = 'if specified, print version number',
-                    dest    = 'b_version',
-                    action  = 'store_true',
-                    default = False)
+# parserCore.add_argument("--inputDir",
+#                     help    = "input dir",
+#                     dest    = 'inputDir')
+# parserCore.add_argument("--outputDir",
+#                     help    = "output image directory",
+#                     dest    = 'outputDir',
+#                     default = '')
 
-parserSelf.add_argument("--overwrite",
-                    help    = "overwrite files if already existing",
-                    dest    = 'overwrite',
-                    action  = 'store_true',
-                    default = False)
-parserSelf.add_argument("--followLinks",
-                    help    = "follow symbolic links",
-                    dest    = 'followLinks',
-                    action  = 'store_true',
-                    default = False)
-parserSelf.add_argument("--fileFilter",
-                    help    = "a list of comma separated string filters to apply across the input file space",
-                    dest    = 'fileFilter',
-                    default = '')
-parserSelf.add_argument("--fileFilterLogic",
-                    help    = "the logic to apply across the file filter",
-                    dest    = 'fileFilterLogic',
-                    default = 'OR')
-parserSelf.add_argument("--dirFilter",
-                    help    = "a list of comma separated string filters to apply across the input dir space",
-                    dest    = 'dirFilter',
-                    default = '')
-parserSelf.add_argument("--printElapsedTime",
-                    help    = "print program run time",
-                    dest    = 'printElapsedTime',
-                    action  = 'store_true',
-                    default = False)
-parserSelf.add_argument("--threads",
-                    help    = "number of threads for innermost loop processing",
-                    dest    = 'threads',
-                    default = "0")
-parserSelf.add_argument("--outputLeafDir",
-                    help    = "formatting spec for output leaf directory",
-                    dest    = 'outputLeafDir',
-                    default = "")
+# parserCore.add_argument("--inputFile",
+#                     help    = "input file",
+#                     dest    = 'inputFile',
+#                     default = '')
+# parserCore.add_argument("--man",
+#                     help    = "man",
+#                     dest    = 'man',
+#                     action  = 'store_true',
+#                     default = False)
+# parserCore.add_argument("--synopsis",
+#                     help    = "short synopsis",
+#                     dest    = 'synopsis',
+#                     action  = 'store_true',
+#                     default = False)
+# parserCore.add_argument("--json",
+#                     help    = "output final return in json",
+#                     dest    = 'json',
+#                     action  = 'store_true',
+#                     default = False)
+# parserCore.add_argument("--verbosity",
+#                     help    = "verbosity level for app",
+#                     dest    = 'verbosity',
+#                     default = "1")
+# parserCore.add_argument('--version',
+#                     help    = 'if specified, print version number',
+#                     dest    = 'b_version',
+#                     action  = 'store_true',
+#                     default = False)
+
+# parserSelf.add_argument("--overwrite",
+#                     help    = "overwrite files if already existing",
+#                     dest    = 'overwrite',
+#                     action  = 'store_true',
+#                     default = False)
+# parserSelf.add_argument("--followLinks",
+#                     help    = "follow symbolic links",
+#                     dest    = 'followLinks',
+#                     action  = 'store_true',
+#                     default = False)
+# parserSelf.add_argument("--fileFilter",
+#                     help    = "a list of comma separated string filters to apply across the input file space",
+#                     dest    = 'fileFilter',
+#                     default = '')
+# parserSelf.add_argument("--fileFilterLogic",
+#                     help    = "the logic to apply across the file filter",
+#                     dest    = 'fileFilterLogic',
+#                     default = 'OR')
+# parserSelf.add_argument("--dirFilter",
+#                     help    = "a list of comma separated string filters to apply across the input dir space",
+#                     dest    = 'dirFilter',
+#                     default = '')
+# parserSelf.add_argument("--printElapsedTime",
+#                     help    = "print program run time",
+#                     dest    = 'printElapsedTime',
+#                     action  = 'store_true',
+#                     default = False)
+# parserSelf.add_argument("--threads",
+#                     help    = "number of threads for innermost loop processing",
+#                     dest    = 'threads',
+#                     default = "0")
+# parserSelf.add_argument("--outputLeafDir",
+#                     help    = "formatting spec for output leaf directory",
+#                     dest    = 'outputLeafDir',
+#                     default = "")
 parserSelf.add_argument("--test",
                     help    = "test",
                     dest    = 'test',
@@ -323,7 +287,7 @@ parserSelf.add_argument("--test",
 def main(argv=None):
     parser  = ArgumentParser(description        = str_desc,
                              formatter_class    = RawTextHelpFormatter,
-                             parents            = [parserCore, parserSelf])
+                             parents            = [parserCore, parserIO, parserSelf])
     args = parser.parse_args()
     if args.man or args.synopsis:
         print(str_desc)
@@ -332,11 +296,11 @@ def main(argv=None):
         else:
             str_help     = synopsis(True)
         print(str_help)
-        sys.exit(1)
+        return 1
 
     if args.b_version:
         print("Name:    %s\nVersion: %s" % (__pkg.name, __version__))
-        sys.exit(1)
+        return 1
 
     args.str_version    = __version__
     args.str_desc       = synopsis(True)
@@ -344,7 +308,6 @@ def main(argv=None):
     pf_do               = pfdo.pfdo(vars(args))
 
     # And now run it!
-    # pudb.set_trace()
     d_pfdo              = pf_do.run(timerStart = True)
 
     if args.printElapsedTime:

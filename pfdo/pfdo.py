@@ -10,7 +10,13 @@ from        pfmisc              import  other
 from        pfmisc              import  error
 
 import      pudb
-import      pftree
+from        pftree              import  pftree
+
+try:
+    from    .                   import __name__, __version__
+except:
+    from    __init__            import __name__, __version__
+
 
 class pfdo(object):
     """
@@ -40,31 +46,31 @@ class pfdo(object):
         #
         # Object desc block
         #
-        self.str_desc                   = ''
-        self.__name__                   = "pfdo"
+        self.__name__                   = __name__
+        self.str_version                = __version__
 
         self.dp                         = None
         self.log                        = None
         self.tic_start                  = 0.0
         self.verbosityLevel             = -1
-        self.maxDepth                   = -1
 
         # Declare pf_tree
-        self.pf_tree    = pftree.pftree(
-                inputDir                = self.args['inputDir'],
-                maxDepth                = self.maxDepth,
-                inputFile               = self.args['inputFile'],
-                outputDir               = self.args['outputDir'],
-                outputLeafDir           = self.args['outputLeafDir'],
-                threads                 = int(self.args['threads']),
-                verbosity               = int(self.args['verbosity']),
-                followLinks             = bool(self.args['followLinks']),
-                relativeDir             = True
-        )
+        self.pf_tree                    = pftree.pftree(self.args)
+        # self.pf_tree    = pftree.pftree(
+        #         inputDir                = self.args['inputDir'],
+        #         maxDepth                = self.maxDepth,
+        #         inputFile               = self.args['inputFile'],
+        #         outputDir               = self.args['outputDir'],
+        #         outputLeafDir           = self.args['outputLeafDir'],
+        #         threads                 = int(self.args['threads']),
+        #         verbosity               = int(self.args['verbosity']),
+        #         followLinks             = bool(self.args['followLinks']),
+        #         relativeDir             = True
+        # )
 
     def __init__(self, *args, **kwargs):
         """
-        Constructor for pftreeDo.
+        Constructor for pfdo.
 
         """
         self.args           = args[0]
@@ -73,6 +79,7 @@ class pfdo(object):
         # we call the following method on the class
         # directly.
         pfdo.declare_selfvars(self)
+        self.str_desc       = self.args['str_desc']
 
         self.dp             = pfmisc.debug(
                                  verbosity   = int(self.args['verbosity']),
