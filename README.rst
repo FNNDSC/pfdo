@@ -53,6 +53,7 @@ Command line arguments
 ----------------------
 
 .. code:: html
+
         --inputDir <inputDir>
         Input directory to examine. The downstream nested structure of this
         directory is examined and recreated in the <outputDir>.

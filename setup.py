@@ -12,7 +12,7 @@ def readme():
 
 setup(
       name             =   'pfdo',
-      version          =   '4.0.4',
+      version          =   '4.0.6',
       description      =   'Base machinery for using a pftree object to good purpose',
       long_description =   readme(),
       author           =   'FNNDSC',
