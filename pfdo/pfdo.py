@@ -54,19 +54,8 @@ class pfdo(object):
         self.tic_start                  = 0.0
         self.verbosityLevel             = -1
 
-        # Declare pf_tree
+        # Declare/construct a delegate pf_tree
         self.pf_tree                    = pftree.pftree(self.args)
-        # self.pf_tree    = pftree.pftree(
-        #         inputDir                = self.args['inputDir'],
-        #         maxDepth                = self.maxDepth,
-        #         inputFile               = self.args['inputFile'],
-        #         outputDir               = self.args['outputDir'],
-        #         outputLeafDir           = self.args['outputLeafDir'],
-        #         threads                 = int(self.args['threads']),
-        #         verbosity               = int(self.args['verbosity']),
-        #         followLinks             = bool(self.args['followLinks']),
-        #         relativeDir             = True
-        # )
 
     def __init__(self, *args, **kwargs):
         """

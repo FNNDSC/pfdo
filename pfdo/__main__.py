@@ -73,18 +73,6 @@ str_desc = Colors.CYAN + f'''
 
 ''' + Colors.NO_COLOUR
 
-# package_CLIcore = """
-#         --inputDir <inputDir>                                                   \\
-#         --outputDir <outputDir>                                                 \\
-#         [--inputFile <inputFile>]                                               \\
-#         [--printElapsedTime]                                                    \\
-#         [--man]                                                                 \\
-#         [--synopsis]                                                            \\
-#         [--verbosity <verbosity>]                                               \\
-#         [--version]                                                             \\
-#         [--json]
-# """
-
 package_CLIself = '''
         [--test]                                                                \\'''
 
@@ -95,42 +83,6 @@ package_argSynopsisSelf = """
         reconstiuted tree in the output directory, prefixed with the text
         "analyzed-".
 """
-
-# package_argSynopsisCore = """
-#         --inputDir <inputDir>
-#         Input base directory to traverse.
-
-#         --outputDir <outputDir>
-#         The output root directory that will contain a tree structure identical
-#         to the input directory, and each "leaf" node will contain the analysis
-#         results.
-
-#         [--inputFile <inputFile>]
-#         An optional <inputFile> specified relative to the <inputDir>. If
-#         specified, then do not perform a directory walk, but convert only
-#         this file.
-
-#         [--man]
-#         Show full help.
-
-#         [--synopsis]
-#         Show brief help.
-
-#         [--json]
-#         If specified, output a JSON dump of final return.
-
-#         [--verbosity <level>]
-#         Set the app verbosity level.
-
-#             0: No internal output;
-#             1: Run start / stop output notification;
-#             2: As with level '1' but with simpleProgress bar in 'pftree';
-#             3: As with level '2' but with list of input dirs/files in 'pftree';
-#             5: As with level '3' but with explicit file logging for
-#                     - read
-#                     - analyze
-#                     - write
-# """
 
 def synopsis(ab_shortOnly = False):
     scriptName = os.path.basename(sys.argv[0])
@@ -199,85 +151,10 @@ def synopsis(ab_shortOnly = False):
     else:
         return shortSynopsis + description
 
-# parserCore  = ArgumentParser(description        = 'Core I/O',
-#                              formatter_class    = RawTextHelpFormatter,
-#                              add_help           = False)
 parserSelf  = ArgumentParser(description        = 'Self specific',
                              formatter_class    = RawTextHelpFormatter,
                              add_help           = False)
 
-# parserCore.add_argument("--inputDir",
-#                     help    = "input dir",
-#                     dest    = 'inputDir')
-# parserCore.add_argument("--outputDir",
-#                     help    = "output image directory",
-#                     dest    = 'outputDir',
-#                     default = '')
-
-# parserCore.add_argument("--inputFile",
-#                     help    = "input file",
-#                     dest    = 'inputFile',
-#                     default = '')
-# parserCore.add_argument("--man",
-#                     help    = "man",
-#                     dest    = 'man',
-#                     action  = 'store_true',
-#                     default = False)
-# parserCore.add_argument("--synopsis",
-#                     help    = "short synopsis",
-#                     dest    = 'synopsis',
-#                     action  = 'store_true',
-#                     default = False)
-# parserCore.add_argument("--json",
-#                     help    = "output final return in json",
-#                     dest    = 'json',
-#                     action  = 'store_true',
-#                     default = False)
-# parserCore.add_argument("--verbosity",
-#                     help    = "verbosity level for app",
-#                     dest    = 'verbosity',
-#                     default = "1")
-# parserCore.add_argument('--version',
-#                     help    = 'if specified, print version number',
-#                     dest    = 'b_version',
-#                     action  = 'store_true',
-#                     default = False)
-
-# parserSelf.add_argument("--overwrite",
-#                     help    = "overwrite files if already existing",
-#                     dest    = 'overwrite',
-#                     action  = 'store_true',
-#                     default = False)
-# parserSelf.add_argument("--followLinks",
-#                     help    = "follow symbolic links",
-#                     dest    = 'followLinks',
-#                     action  = 'store_true',
-#                     default = False)
-# parserSelf.add_argument("--fileFilter",
-#                     help    = "a list of comma separated string filters to apply across the input file space",
-#                     dest    = 'fileFilter',
-#                     default = '')
-# parserSelf.add_argument("--fileFilterLogic",
-#                     help    = "the logic to apply across the file filter",
-#                     dest    = 'fileFilterLogic',
-#                     default = 'OR')
-# parserSelf.add_argument("--dirFilter",
-#                     help    = "a list of comma separated string filters to apply across the input dir space",
-#                     dest    = 'dirFilter',
-#                     default = '')
-# parserSelf.add_argument("--printElapsedTime",
-#                     help    = "print program run time",
-#                     dest    = 'printElapsedTime',
-#                     action  = 'store_true',
-#                     default = False)
-# parserSelf.add_argument("--threads",
-#                     help    = "number of threads for innermost loop processing",
-#                     dest    = 'threads',
-#                     default = "0")
-# parserSelf.add_argument("--outputLeafDir",
-#                     help    = "formatting spec for output leaf directory",
-#                     dest    = 'outputLeafDir',
-#                     default = "")
 parserSelf.add_argument("--test",
                     help    = "test",
                     dest    = 'test',
