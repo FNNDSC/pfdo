@@ -26,10 +26,14 @@ from    pfmisc              import other
 import  pftree
 from    pftree.__main__     import  package_CLIcore,        \
                                     package_IOcore,         \
-                                    package_argSynopsisIO,  \
+                                    package_DSIO,           \
                                     package_argSynopsisCore,\
-                                    parserIO,               \
-                                    parserCore
+                                    package_argSynopsisIO,  \
+                                    package_argSynopsisDS,  \
+                                    parserCore,             \
+                                    parserIO
+
+
 
 str_desc = Colors.CYAN + f'''
 
@@ -84,6 +88,12 @@ package_argSynopsisSelf = """
         "analyzed-".
 """
 
+package_CLIfull             = package_IOcore + package_CLIself + package_CLIcore
+package_argsSynopsisFull    = package_argSynopsisIO + package_argSynopsisSelf + package_argSynopsisCore
+
+DSpackage_CLI               = package_DSIO   + package_CLIself + package_CLIcore
+DSpackage_argsSynopsisFull  = package_argSynopsisDS + package_argSynopsisSelf + package_argSynopsisCore
+
 def synopsis(ab_shortOnly = False):
     scriptName = os.path.basename(sys.argv[0])
     shortSynopsis =  """
@@ -93,7 +103,7 @@ def synopsis(ab_shortOnly = False):
 
     SYNOPSIS
 
-        pfdo \ """ + package_IOcore + package_CLIself +  package_CLIcore + """
+        pfdo \ """ + package_CLIfull + """
 
     BRIEF EXAMPLE
 
@@ -112,7 +122,7 @@ def synopsis(ab_shortOnly = False):
         files in each directory, and saving results in an output tree that
         reflects the input tree topology.
 
-    ARGS ''' + package_argSynopsisIO + package_argSynopsisSelf + package_argSynopsisCore + '''
+    ARGS ''' + package_argsSynopsisFull + '''
 
 
     EXAMPLES
@@ -161,11 +171,9 @@ parserSelf.add_argument("--test",
                     action  = 'store_true',
                     default = False)
 
-def main(argv=None):
-    parser  = ArgumentParser(description        = str_desc,
-                             formatter_class    = RawTextHelpFormatter,
-                             parents            = [parserCore, parserIO, parserSelf])
-    args = parser.parse_args()
+def earlyExit_check(args) -> int:
+    """Perform some preliminary checks
+    """
     if args.man or args.synopsis:
         print(str_desc)
         if args.man:
@@ -174,14 +182,22 @@ def main(argv=None):
             str_help     = synopsis(True)
         print(str_help)
         return 1
-
     if args.b_version:
-        print("Name:    %s\nVersion: %s" % (__pkg.name, __version__))
+        print("Name:    %s\nVersion: %s" % ('pfdo', __version__))
         return 1
+    return 0
 
+def main(argv=None):
+    parser  = ArgumentParser(description        = str_desc,
+                             formatter_class    = RawTextHelpFormatter,
+                             parents            = [parserCore, parserIO, parserSelf])
+    args = parser.parse_args()
+
+    if earlyExit_check(args): return 1
+    
     args.str_version    = __version__
     args.str_desc       = synopsis(True)
-
+    
     pf_do               = pfdo.pfdo(vars(args))
 
     # And now run it!
