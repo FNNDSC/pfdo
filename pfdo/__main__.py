@@ -40,7 +40,7 @@ str_desc = Colors.CYAN + f'''
                                   __      _
                                  / _|    | |
                           _ __  | |_   __| |  ___
-                         | '_ \ |  _| / _` | / _ \ 
+                         | '_ \ |  _| / _` | / _ \
                          | |_) || |  | (_| || (_) |
                          | .__/ |_|   \__,_| \___/
                          | |
@@ -78,14 +78,74 @@ str_desc = Colors.CYAN + f'''
 ''' + Colors.NO_COLOUR
 
 package_CLIself = '''
+        [--analyzeFileIndex <N>]                                                \\
         [--test]                                                                \\'''
 
 package_argSynopsisSelf = """
         [--test]
         If specified, run the "dummy" internal callback loop triad. The test
         flow simply tags files in some inputDir tree and "touches" them to a
-        reconstiuted tree in the output directory, prefixed with the text
+        reconstituted tree in the output directory, prefixed with the text
         "analyzed-".
+
+        [--analyzeFileIndex <someIndex>]
+        An optional string to further "filter" the list of files that have
+        been detected to analyze. This is useful for certain operations
+        that might need only one file in an input directory to start but
+        then once started will self consume multiple files independently
+        of the external controller. The default is "a" which implies
+        *ALL* files in a given directory. The set of valid <someIndex>:
+
+            "a":    "all" files.
+            "m":    only the "middle" file in the file list
+            "f":    only the "first" file in the file list
+            "l":    only the "last" file in the file list
+            "<N>":  only the file at index N in the file list. This index
+                    can "wrap" in the positive and negative dir and can
+                    exceed the actual list length (in which case it is
+                    mapped correctly back into the original list).
+
+                    Pedantically, in the negative direction:
+                        '-1' will mean the last file, while
+                        -<listLen> will mean the first file again
+                        -<listLen+1> will mean the last file again
+                        etc...
+                    and in the positive direction:
+                        <listLen> will mean the first file
+                        <listLen>*2 will mean the first file
+                        etc..."""
+
+package_exampleHelp         = """
+    EXAMPLES
+
+    Perform a `pfdo` down some input directory:
+
+        pfdo                                                                    \\
+            --inputDir /var/www/html/data                                       \\
+            --fileFilter jpg                                                    \\
+            --outputDir /tmp/jpg                                                \\
+            --test --json                                                       \\
+            --threads 0 --printElapsedTime
+
+    The above will find all files in the tree structure rooted at
+    /var/www/html/data that also contain the string "jpg" anywhere
+    in the filename. For each file found, a corresponding file will
+    be touched in the output directory, in the same tree location as
+    the original input. This touched file will be prefixed with the
+    string "analyzed-".
+
+        pfdo                                                                    \\
+            --inputDir $PWD/raw                                                 \\
+            --dirFilter 100307                                                  \\
+            --outputDir $PWD/out --test --json                                  \\
+            --analyzeFileIndex m                                                \\
+            --threads 0 --printElapsedTime
+
+    Here, only the middle file in (all) directories that contain the string 
+    ``100307`` will be targetted.
+
+    Finally the elapsed time and a JSON output are printed.
+
 """
 
 package_CLIfull             = package_IOcore + package_CLIself + package_CLIcore
@@ -122,39 +182,7 @@ def synopsis(ab_shortOnly = False):
         files in each directory, and saving results in an output tree that
         reflects the input tree topology.
 
-    ARGS ''' + package_argsSynopsisFull + '''
-
-
-    EXAMPLES
-
-    Perform a `pfdo` down some input directory:
-
-        pfdo                                                                    \\
-            --inputDir /var/www/html/data                                       \\
-            --fileFilter jpg                                                    \\
-            --outputDir /tmp/jpg                                                \\
-            --test --json                                                       \\
-            --threads 0 --printElapsedTime
-
-    The above will find all files in the tree structure rooted at
-    /var/www/html/data that also contain the string "jpg" anywhere
-    in the filename. For each file found, a corresponding file will
-    be touched in the output directory, in the same tree location as
-    the original input. This touched file will be prefixed with the
-    string "analyzed-".
-
-        pfdo                                                                    \\
-            --inputDir $(pwd)/raw                                               \\
-            --dirFilter 100307                                                  \\
-            --outputDir $(pwd)/out --test --json                                \\
-            --threads 0 --printElapsedTime
-
-    Here, all files in (all) directories that contain the string ``100307``
-    will be targetted.
-
-    Finally the elapsed time and a JSON output are printed.
-
-    '''
+    ARGS ''' + package_argsSynopsisFull + package_exampleHelp
 
     if ab_shortOnly:
         return shortSynopsis
@@ -170,6 +198,18 @@ parserSelf.add_argument("--test",
                     dest    = 'test',
                     action  = 'store_true',
                     default = False)
+parserSelf.add_argument("--analyzeFileIndex",
+                    help    = "file index per directory to analyze",
+                    dest    = 'analyzeFileIndex',
+                    default = 'a')
+
+parserSA    = ArgumentParser(description        = str_desc,
+                             formatter_class    = RawTextHelpFormatter,
+                            parents             = [parserCore, parserIO, parserSelf])
+
+parserDS    = ArgumentParser(description        = str_desc,
+                             formatter_class    = RawTextHelpFormatter,
+                             parents            = [parserCore, parserSelf])
 
 def earlyExit_check(args) -> int:
     """Perform some preliminary checks
@@ -188,16 +228,13 @@ def earlyExit_check(args) -> int:
     return 0
 
 def main(argv=None):
-    parser  = ArgumentParser(description        = str_desc,
-                             formatter_class    = RawTextHelpFormatter,
-                             parents            = [parserCore, parserIO, parserSelf])
-    args = parser.parse_args()
+    args = parserSA.parse_args()
 
     if earlyExit_check(args): return 1
-    
+
     args.str_version    = __version__
     args.str_desc       = synopsis(True)
-    
+
     pf_do               = pfdo.pfdo(vars(args))
 
     # And now run it!

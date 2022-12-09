@@ -117,6 +117,86 @@ class pfdo(object):
             'filesRead':        filesRead
         }
 
+    def fileListToAnalyze_determine(self, l_fileProbed):
+        """
+        Return the list of files to process, based on l_fileProbed
+        and self.args['analyzeFileIndex']. This is useful for operations
+        that might need only one file in an input directory to start but
+        then once started will self consume multiple files independently
+        of the external controller:
+
+            "a":    "all" files.
+            "m":    only the "middle" file in the file list
+            "f":    only the "first" file in the file list
+            "l":    only the "last" file in the file list
+            "<N>":  only the file at index N in the file list. This index
+                    can "wrap" in the positive and negative dir and can
+                    exceed the actual list length (in which case it is
+                    mapped correctly back into the original list).
+
+                    Pedantically, in the negative direction:
+                        '-1' will mean the last file, while
+                        -<listLen> will mean the first file again
+                        -<listLen+1> will mean the last file again
+                        etc...
+                    and in the positive direction:
+                        <listLen> will mean the first file
+                        <listLen>*2 will mean the first file
+                        etc...
+        """
+
+        def middleIndex_find(l_lst):
+            """
+            Return the middle index in a list.
+            If list has no length, return None.
+            """
+            middleIndex     = None
+            if len(l_lst):
+                if len(l_lst) == 1:
+                    middleIndex = 0
+                else:
+                    middleIndex = round(len(l_lst)/2+0.01)
+            return middleIndex
+
+        def nIndex_find(l_lst, str_index):
+            """
+            This method attempts to find a numerical index within the
+            file list, with support for +ve and -ve wrap around.
+
+            If the str_index is non-numeric, return -1
+            """
+            index:  int = 0
+            # pudb.set_trace()
+            try:
+                index   = int(str_index)
+                if len(l_lst):
+                    if index >= 0:
+                        while index >= len(l_lst):
+                            index -= len(l_lst)
+                    else:
+                        while abs(index) > len(l_lst):
+                            index += len(l_lst)
+                        index += len(l_lst)
+                    return index
+            except:
+                pass
+            return -1
+
+        l_fileToAnalyze:    list    = []
+        if len(l_fileProbed):
+            if 'analyzeFileIndex' in self.args:
+                if self.args['analyzeFileIndex'] == 'a': l_fileToAnalyze = l_fileProbed
+                if self.args['analyzeFileIndex'] == 'f': l_fileToAnalyze.append(l_fileProbed[0])
+                if self.args['analyzeFileIndex'] == 'l': l_fileToAnalyze.append(l_fileProbed[-1])
+                if self.args['analyzeFileIndex'] == 'm':
+                    if middleIndex_find(l_fileProbed) >= 0:
+                        self.dp.qprint(l_fileProbed, level = 5)
+                        l_fileToAnalyze.append(l_fileProbed[middleIndex_find(l_fileProbed)])
+                nIndex  = nIndex_find(l_fileProbed, self.args['analyzeFileIndex'])
+                if nIndex>=0:
+                    l_fileToAnalyze.append(l_fileProbed[nIndex])
+        return l_fileToAnalyze
+
     def inputAnalyzeCallback(self, *args, **kwargs):
         """
         Callback stub for doing actual work on the read data.
@@ -140,10 +220,12 @@ class pfdo(object):
             d_inputReadCallback = at_data[1]
 
         if 'l_fileProbed' in d_inputReadCallback.keys():
-            l_fileProbed    = d_inputReadCallback['l_fileProbed']
-            l_fileAnalyzed  = ['analyzed-%s' % x for x in l_fileProbed]
-            b_status        = True
-            filesAnalyzed  += len(l_fileAnalyzed)
+            l_fileProbed        = self.fileListToAnalyze_determine(
+                                    d_inputReadCallback['l_fileProbed']
+                                )
+            l_fileAnalyzed      = ['analyzed-%s' % x for x in l_fileProbed]
+            b_status            = True
+            filesAnalyzed      += len(l_fileAnalyzed)
 
         return {
             'status':           b_status,
