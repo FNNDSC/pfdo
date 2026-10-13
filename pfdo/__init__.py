@@ -1,4 +1,37 @@
-from importlib.metadata import Distribution
+"""pfdo: walk a directory tree with pftree and do something in every directory.
 
-__pkg       = Distribution.from_name(__package__)
-__version__ = __pkg.version
+The base class of a family of tools, each doing one thing per directory of an input
+tree and writing results to the same place in an output tree. ``Pfdo`` is a
+``Pftree`` whose callbacks are meant to be overridden, plus the family's shared
+``--analyzeFileIndex`` choice of which files the analyze step gets.
+
+Key components:
+    - Pfdo: the base class
+    - PfdoOptions: pftree's options plus pfdo's
+    - fileIndex_select: the ``--analyzeFileIndex`` rule
+    - __main__: the ``pfdo`` command line, its manual, and the parts a package
+      built on pfdo assembles its own from
+
+Typical usage:
+    from pfdo import Pfdo, PfdoOptions
+    Pfdo(PfdoOptions(inputDir=Path("/in"), outputDir=Path("/out"), testRun=True)).run()
+
+Dependencies:
+    - pftree
+"""
+
+from __future__ import annotations
+
+__version__: str = "6.0.0"
+
+from pfdo.models import PfdoOptions, fileIndex_validate
+from pfdo.pfdo import ANALYZED_PREFIX, Pfdo, fileIndex_select
+
+__all__ = [
+    "ANALYZED_PREFIX",
+    "Pfdo",
+    "PfdoOptions",
+    "__version__",
+    "fileIndex_select",
+    "fileIndex_validate",
+]
