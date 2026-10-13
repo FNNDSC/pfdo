@@ -1,0 +1,28 @@
+= pfdo: purpose
+:toc:
+
+== Abstract
+
+pfdo is the base class of a family of tools that each do one thing in every directory of an input tree and write the result to the same place in an output tree. It is `pftree.Pftree` with its callbacks left open for a subclass to fill, plus one rule the family shares: which of a directory's files the analyze step receives. The package exists so that the family's members differ only in what they do, not in how they walk, filter, fail or report.
+
+== The problem
+
+`pftree` supplies the walk, the filters and the three-stage processing contract, and a tool can subclass it directly. The members of one family of tools, however, share more than that. Each takes an input and an output directory, each selects inputs per directory in the same handful of ways, each has the same command line apart from its own few options, and each wants the same manual page with its own banner. Written separately, five tools drift into five slightly different behaviours for the same thing, and a user who learns one has not learned the others.
+
+A second, more specific problem concerns which files a per-directory operation should start from. Some operations consume a whole directory from a single entry point: a DICOM-to-NIfTI conversion is started on one slice and reads the series itself, a FreeSurfer reconstruction on one volume. Running such an operation on every file in the directory runs it once per slice. Other operations do want every file. The choice belongs to the user at run time, not to the tool author.
+
+== What pfdo is
+
+`Pfdo` subclasses `Pftree` and adds `PfdoOptions`, which is `TreeOptions` plus `analyzeFileIndex` and `testRun`. `analyzeFileIndex` names the files the analyze step gets from each directory: all of them, the first, the last, the middle, or an integer index that wraps in either direction so that `-1` is the last file and the list length is the first again. `filesToAnalyze(node)` applies it, and a subclass calls that rather than reading `node.files` directly.
+
+The base class's own callbacks are a demonstration that `pfdo --test` runs: read lists a directory's files, analyze selects by index and prefixes each name with `analyzed-`, save touches those names in the output directory and refuses to overwrite an existing file unless `--overwrite` is given. A subclass overrides analyze and save with real work and sets `processAlways` so that its `run()` processes without `--test`.
+
+The command line and the manual are assembled from pftree's parts and pfdo's own, and are exposed in parts again, so that a package built on pfdo assembles its command line and page the same way with its own name and options. The page is rendered through `pftree.manual`, which is why `pfdo_run --man` looks like `pftree --man` with a different banner.
+
+== What pfdo is not
+
+pfdo does nothing per directory by itself; a subclass does. It is not a file iterator, and it is not a ChRIS plugin, though its ChRIS-style parser variant exists so that a plugin wrapper can give it positional input and output directories.
+
+== Who uses it
+
+`pfdo_run` runs a shell command with tag substitution in every directory; `pfdo_med2image` and `pfdo_mgz2image` convert volumes to images; `pfdo_mri_unet` runs a segmentation. `pl-shexec`, the ChRIS plugin over `pfdo_run`, and `pl-freesurfer`, built on the same design, are the plugins the family exists to make uniform.

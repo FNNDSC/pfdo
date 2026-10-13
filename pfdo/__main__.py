@@ -1,41 +1,53 @@
-#!/usr/bin/env python3
-#
-# (c) 2022 Fetal-Neonatal Neuroimaging & Developmental Science Center
-#                   Boston Children's Hospital
-#
-#              http://childrenshospital.org/FNNDSC/
-#                        dev@babyMRI.org
-#
+"""The ``pfdo`` command line and its manual.
 
-import sys, os
+``pfdo`` on its own walks a tree, applies the filters, and with ``--test`` runs the
+base class's demonstration callbacks. Its parser and manual are assembled from
+pftree's parts plus pfdo's own, and are themselves exposed in parts so a package
+built on pfdo can assemble its own.
 
-try:
-    from    .               import pfdo
-    from    .               import __pkg, __version__
-except:
-    from pfdo               import pfdo
-    from __init__           import __pkg, __version__
-from    argparse            import RawTextHelpFormatter
-from    argparse            import ArgumentParser
-import  pudb
+Key components:
+    - CLI_SELF, ARGS_SYNOPSIS_SELF, EXAMPLES: pfdo's manual pieces
+    - CLI_FULL, CLI_DS, ARGS_SYNOPSIS_FULL, ARGS_SYNOPSIS_DS: the assembled pieces,
+      standalone and ChRIS-DS style
+    - synopsis: the manual text for a command built on pfdo
+    - manual_build: the page, rendered through ``pftree.manual``
+    - parserSelf_build / parser_build: the argument parsers
+    - main: the entry point, honouring an explicit ``argv``
 
-import  pfmisc
-from    pfmisc._colors      import Colors
-from    pfmisc              import other
+Typical usage:
+    pfdo --inputDir /data --outputDir /tmp/out --fileFilter jpg --test --json
+    pfdo --man
 
-import  pftree
-from    pftree.__main__     import  package_CLIcore,        \
-                                    package_IOcore,         \
-                                    package_DSIO,           \
-                                    package_argSynopsisCore,\
-                                    package_argSynopsisIO,  \
-                                    package_argSynopsisDS,  \
-                                    parserCore,             \
-                                    parserIO
+Dependencies:
+    - pftree (its CLI parts and manual renderer)
+"""
 
+from __future__ import annotations
 
+import argparse
+import json
+import sys
+from collections.abc import Sequence
 
-str_desc = Colors.CYAN + f'''
+from pftree.__main__ import (
+    ARGS_SYNOPSIS_CORE,
+    ARGS_SYNOPSIS_DS,
+    ARGS_SYNOPSIS_IO,
+    CLI_CORE,
+    CLI_DS_IO,
+    CLI_IO_CORE,
+    logging_configure,
+    parserCore_build,
+    parserIO_build,
+)
+from pftree.manual import Manual, manual_print
+from pftree.models import RunResult
+
+from pfdo import __version__
+from pfdo.models import PfdoOptions
+from pfdo.pfdo import Pfdo
+
+BANNER_ART: str = r"""
 
                                   __      _
                                  / _|    | |
@@ -46,8 +58,11 @@ str_desc = Colors.CYAN + f'''
                          | |
                          |_|
 
+"""
 
+BANNER_TITLE: str = "Path-File Do (something)"
 
+BANNER_TEXT: str = """
                           Path-File Do (something)
 
         Recursively walk down a directory tree and perform some operation
@@ -55,14 +70,12 @@ str_desc = Colors.CYAN + f'''
         expression). Results of each operation are saved in output tree
         that  preserves the input directory structure.
 
-
-                             -- version ''' + \
-             Colors.YELLOW + __version__ + Colors.CYAN + ''' --
+                             -- version {version} --
 
         'pfdo' is the base infrastructure app/class for walking down some
         dir tree, optionally finding and tagging files that conform to
         a simple filter, and running (something) on the files. This class
-        provides the basic mechanism for using pfree in this manner and the
+        provides the basic mechanism for using pftree in this manner and the
         (something) operation should be provided by a subclass of this base.
 
         As part of the "pf*" suite of applications, it is geared to IO as
@@ -74,36 +87,36 @@ str_desc = Colors.CYAN + f'''
         it builds. It can be thought of as less of a descendent and more of a
         sibling.
 
+"""
 
-''' + Colors.NO_COLOUR
+CLI_SELF: str = """
+        [--analyzeFileIndex <a|f|l|m|N>]                                        \\
+        [--test]                                                                \\"""
 
-package_CLIself = '''
-        [--analyzeFileIndex <N>]                                                \\
-        [--test]                                                                \\'''
-
-package_argSynopsisSelf = """
+ARGS_SYNOPSIS_SELF: str = """
         [--test]
         If specified, run the "dummy" internal callback loop triad. The test
         flow simply tags files in some inputDir tree and "touches" them to a
         reconstituted tree in the output directory, prefixed with the text
-        "analyzed-".
+        "analyzed-". An output file that already exists stops that directory
+        unless --overwrite is given.
 
-        [--analyzeFileIndex <someIndex>]
+        [--analyzeFileIndex <a|f|l|m|N>]
         An optional string to further "filter" the list of files that have
         been detected to analyze. This is useful for certain operations
         that might need only one file in an input directory to start but
         then once started will self consume multiple files independently
         of the external controller. The default is "a" which implies
-        *ALL* files in a given directory. The set of valid <someIndex>:
+        *ALL* files in a given directory. The set of valid values:
 
             "a":    "all" files.
             "m":    only the "middle" file in the file list
             "f":    only the "first" file in the file list
             "l":    only the "last" file in the file list
             "<N>":  only the file at index N in the file list. This index
-                    can "wrap" in the positive and negative dir and can
-                    exceed the actual list length (in which case it is
-                    mapped correctly back into the original list).
+                    can "wrap" in the positive and negative direction and
+                    can exceed the actual list length (in which case it is
+                    mapped back into the original list).
 
                     Pedantically, in the negative direction:
                         '-1' will mean the last file, while
@@ -113,9 +126,11 @@ package_argSynopsisSelf = """
                     and in the positive direction:
                         <listLen> will mean the first file
                         <listLen>*2 will mean the first file
-                        etc..."""
+                        etc...
+"""
 
-package_exampleHelp         = """
+EXAMPLES: str = """
+
     EXAMPLES
 
     Perform a `pfdo` down some input directory:
@@ -141,40 +156,19 @@ package_exampleHelp         = """
             --analyzeFileIndex m                                                \\
             --threads 0 --printElapsedTime
 
-    Here, only the middle file in (all) directories that contain the string 
-    ``100307`` will be targetted.
+    Here, only the middle file in (all) directories whose path contains
+    the string ``100307`` will be targetted.
 
     Finally the elapsed time and a JSON output are printed.
 
 """
 
-package_CLIfull             = package_IOcore + package_CLIself + package_CLIcore
-package_argsSynopsisFull    = package_argSynopsisIO + package_argSynopsisSelf + package_argSynopsisCore
+CLI_FULL: str = CLI_IO_CORE + CLI_SELF + CLI_CORE
+ARGS_SYNOPSIS_FULL: str = ARGS_SYNOPSIS_IO + ARGS_SYNOPSIS_SELF + ARGS_SYNOPSIS_CORE
+CLI_DS: str = CLI_DS_IO + CLI_SELF + CLI_CORE
+ARGS_SYNOPSIS_DS: str = ARGS_SYNOPSIS_DS + ARGS_SYNOPSIS_SELF + ARGS_SYNOPSIS_CORE
 
-DSpackage_CLI               = package_DSIO   + package_CLIself + package_CLIcore
-DSpackage_argsSynopsisFull  = package_argSynopsisDS + package_argSynopsisSelf + package_argSynopsisCore
-
-def synopsis(ab_shortOnly = False):
-    scriptName = os.path.basename(sys.argv[0])
-    shortSynopsis =  """
-    NAME
-
-        pfdo
-
-    SYNOPSIS
-
-        pfdo \ """ + package_CLIfull + """
-
-    BRIEF EXAMPLE
-
-        pfdo                                                                    \\
-            --inputDir /var/www/html/data                                       \\
-            --fileFilter jpg                                                    \\
-            --outputDir /var/www/html/jpg                                       \\
-            --threads 0 --printElapsedTime --test
-    """
-
-    description =  '''
+DESCRIPTION: str = """
     DESCRIPTION
 
         ``pfdo`` provides the base mechanism for navigating some arbitrary
@@ -182,71 +176,156 @@ def synopsis(ab_shortOnly = False):
         files in each directory, and saving results in an output tree that
         reflects the input tree topology.
 
-    ARGS ''' + package_argsSynopsisFull + package_exampleHelp
+        A subclass overrides the inputAnalyze_callback and outputSave_callback
+        methods (each receives the DirNode for a directory and returns a
+        StageResult) and sets processAlways; ``pfdo`` itself only runs its
+        demonstration callbacks under --test.
+"""
 
-    if ab_shortOnly:
-        return shortSynopsis
-    else:
-        return shortSynopsis + description
 
-parserSelf  = ArgumentParser(description        = 'Self specific',
-                             formatter_class    = RawTextHelpFormatter,
-                             add_help           = False)
+def synopsis(shortOnly: bool = False, command: str = "pfdo") -> str:
+    """Assemble the manual text.
 
-parserSelf.add_argument("--test",
-                    help    = "test",
-                    dest    = 'test',
-                    action  = 'store_true',
-                    default = False)
-parserSelf.add_argument("--analyzeFileIndex",
-                    help    = "file index per directory to analyze",
-                    dest    = 'analyzeFileIndex',
-                    default = 'a')
+    Args:
+        shortOnly: NAME, SYNOPSIS and a brief example only.
+        command: the command name shown, for a package built on pfdo.
 
-parserSA    = ArgumentParser(description        = str_desc,
-                             formatter_class    = RawTextHelpFormatter,
-                            parents             = [parserCore, parserIO, parserSelf])
-
-parserDS    = ArgumentParser(description        = str_desc,
-                             formatter_class    = RawTextHelpFormatter,
-                             parents            = [parserCore, parserSelf])
-
-def earlyExit_check(args) -> int:
-    """Perform some preliminary checks
+    Returns:
+        The manual text, without the banner.
     """
-    if args.man or args.synopsis:
-        print(str_desc)
-        if args.man:
-            str_help     = synopsis(False)
-        else:
-            str_help     = synopsis(True)
-        print(str_help)
-        return 1
-    if args.b_version:
-        print("Name:    %s\nVersion: %s" % ('pfdo', __version__))
-        return 1
-    return 0
+    shortSynopsis: str = (
+        f"""
+    NAME
 
-def main(argv=None):
-    args = parserSA.parse_args()
+        {command}
 
-    if earlyExit_check(args): return 1
+    SYNOPSIS
 
-    args.str_version    = __version__
-    args.str_desc       = synopsis(True)
+        {command} \\"""
+        + CLI_FULL
+        + f"""
 
-    pf_do               = pfdo.pfdo(vars(args))
+    BRIEF EXAMPLE
 
-    # And now run it!
-    d_pfdo              = pf_do.run(timerStart = True)
+        {command}                                                                    \\
+            --inputDir /var/www/html/data                                       \\
+            --fileFilter jpg                                                    \\
+            --outputDir /var/www/html/jpg                                       \\
+            --threads 0 --printElapsedTime --test
+    """
+    )
+    if shortOnly:
+        return shortSynopsis
+    return shortSynopsis + DESCRIPTION + "\n    ARGS " + ARGS_SYNOPSIS_FULL + EXAMPLES
 
+
+def manual_build() -> Manual:
+    """The pfdo manual page.
+
+    Returns:
+        The page, with both synopses assembled.
+    """
+    return Manual(
+        command="pfdo",
+        art=BANNER_ART,
+        title=BANNER_TITLE,
+        text=BANNER_TEXT,
+        version=__version__,
+        synopsisShort=synopsis(shortOnly=True),
+        synopsisFull=synopsis(shortOnly=False),
+    )
+
+
+def parserSelf_build() -> argparse.ArgumentParser:
+    """pfdo's own options.
+
+    Returns:
+        A parent parser with ``--test`` and ``--analyzeFileIndex``.
+    """
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--test", dest="testRun", action="store_true", help="run the demonstration callbacks")
+    parser.add_argument(
+        "--analyzeFileIndex",
+        dest="analyzeFileIndex",
+        default="a",
+        help="which files per directory the analyze step gets: a (all), f, l, m, or an index",
+    )
+    return parser
+
+
+def parser_build(standalone: bool = True) -> argparse.ArgumentParser:
+    """Assemble the full parser.
+
+    Args:
+        standalone: include ``--inputDir`` / ``--outputDir``. A ChRIS DS plugin
+            passes False and adds its own positional directories.
+
+    Returns:
+        The parser; ``--help`` is the quick reference and points at ``--man``.
+    """
+    parents: list[argparse.ArgumentParser] = [parserCore_build("pfdo", __version__), parserSelf_build()]
+    if standalone:
+        parents.insert(0, parserIO_build())
+    return argparse.ArgumentParser(
+        prog="pfdo",
+        description="Walk a directory tree and do something in every directory. Full manual: pfdo --man",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        parents=parents,
+    )
+
+
+def options_fromArgs(args: argparse.Namespace) -> PfdoOptions:
+    """Turn parsed arguments into options.
+
+    Args:
+        args: the parser's Namespace.
+
+    Returns:
+        PfdoOptions with every known field applied.
+    """
+    return PfdoOptions.fromDict(vars(args))
+
+
+def result_report(args: argparse.Namespace, result: RunResult) -> None:
+    """Print what the arguments asked for.
+
+    Args:
+        args: the parsed arguments.
+        result: the run's result.
+    """
+    if args.json:
+        print(json.dumps(result.toDict(), indent=4, sort_keys=True))
     if args.printElapsedTime:
-        pf_do.dp.qprint(
-                "Elapsed time = %f seconds" %
-                d_pfdo['runTime']
-        )
+        print(f"Elapsed time = {result.runTime:.6f} seconds")
 
-    return 0
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the command.
+
+    Args:
+        argv: arguments without the program name; ``None`` reads ``sys.argv``.
+
+    Returns:
+        The exit code: 0 on success, 1 when the run failed, 2 on bad arguments.
+    """
+    parser: argparse.ArgumentParser = parser_build()
+    args: argparse.Namespace = parser.parse_args(argv)
+    if args.man or args.synopsis:
+        manual_print(manual_build(), shortOnly=not args.man)
+        return 0
+    if not args.inputDir:
+        parser.error("--inputDir is required")
+    try:
+        options: PfdoOptions = options_fromArgs(args)
+    except ValueError as err:
+        parser.error(str(err))
+    logging_configure(options.verbosity)
+    result: RunResult = Pfdo(options).run()
+    result_report(args, result)
+    if result.error:
+        print(result.error, file=sys.stderr)
+    return 0 if result.status else 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

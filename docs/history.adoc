@@ -1,0 +1,22 @@
+= pfdo: history
+:toc:
+
+== Abstract
+
+pfdo was created in August 2020 as the base class for tools that do one thing per directory of a tree, gained its filters and file-index selection through 2022, and was rebuilt in October 2026 as version 6 on pftree 4. This note records the milestones and the reasons for the turns.
+
+== 2020: a base for a family
+
+The first commit, on 18 August 2020, set the package up as a thin layer over pftree: hold a pftree, provide the three callbacks as stubs with a demonstration body, and run them. Version 1.0.8 followed within two weeks. The reason for a separate package rather than a larger pftree was the family it was meant to anchor. `pfdo_run`, which runs a shell command per directory, and `pfdo_med2image`, which converts volumes to images, were being written at the same time; a shared base let each carry only its own operation while the walk, the command line and the manual stayed in one place.
+
+== 2021 to 2022: filters and the file index
+
+January 2021 brought a new command line and manual assembled from pftree's parts, and February 2021 improved the file and directory filter logic, which at the time lived partly in pfdo. In October 2022 those local filter overrides were removed in favour of pftree's, so that the two agreed. Version 3.x arrived in August and September 2022.
+
+Version 5.0.0, on 9 December 2022, added `--analyzeFileIndex`: the choice of all, first, last, middle or an indexed file per directory as the analyze step's input. It answered a recurring need in the family, where a conversion or reconstruction is started from one file of a directory and consumes the rest itself, and running it on every file ran it once per slice.
+
+== 2026: version 6
+
+By 2026 pfdo had the same debts as pftree: a dependency on `pfmisc`, `pudb` imported at module level, a version read from installed metadata at import so that a source checkout could not be imported, one test that no longer ran, and no continuous integration. It also had two defects of its own: the middle index was computed by rounding and picked one past the middle of an odd list, and the save demonstration broke out of its loop on an existing file and left the directory half written. The parser symbols pfdo_run imported from it existed only on the development branch, so a checkout of the last tag broke pfdo_run.
+
+An audit in October 2026 first proposed folding pfdo into pfdo_run on the grounds that its substance was small. The proposal was rejected: pfdo is thin because it is a base class, and folding it would have made the image-conversion members of the family depend on a shell runner or grow their own copies of the walk. Version 6.0.0 instead rebuilt pfdo on pftree 4.1 with the same treatment pftree had received: dataclass options, the typed callbacks, the file-index rule as a pure function with the middle corrected, per-directory failure that leaves the run going, a composable command line and manual rendered through `pftree.manual`, tests, continuous integration and publication from a tag. The packages below it, `pfdo_run` first, are rebuilt on it in turn.

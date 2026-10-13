@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pfdo"
+dynamic = ["version"]
+description = "Walk a directory tree with pftree and do something in every directory: the base class of the pfdo family"
+readme = "README.rst"
+license = { text = "MIT" }
+authors = [{ name = "FNNDSC", email = "dev@babyMRI.org" }]
+requires-python = ">=3.11"
+dependencies = ["pftree>=4.1.0"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/FNNDSC/pfdo"
+
+[project.scripts]
+pfdo = "pfdo.__main__:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.setuptools]
+packages = ["pfdo"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pfdo.__version__" }
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
