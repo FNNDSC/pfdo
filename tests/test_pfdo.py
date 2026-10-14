@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 from pftree.models import DirNode, StageResult
@@ -159,6 +160,46 @@ def test_subclass_processAlways(tmp_path: Path) -> None:
     assert result.process is not None
     assert result.process.filesAnalyzed == 2
     assert (outputDir / "A/a/count.txt").read_text() == "4\n"
+
+
+class AnalyzeOnly(Pfdo):
+    """A subclass that overrides analyze alone and sets nothing else."""
+
+    seen: ClassVar[list[str]] = []
+
+    def inputAnalyze_callback(self, node: DirNode, read: StageResult) -> StageResult:
+        chosen: list[str] = self.filesToAnalyze(node)
+        AnalyzeOnly.seen.extend(f"{node.relPath}/{name}" for name in chosen)
+        return StageResult(status=True, files=chosen)
+
+
+def test_subclass_overrideAlone_processes_andTouchesNothing(tmp_path: Path) -> None:
+    inputDir, outputDir = tree_make(tmp_path)
+    AnalyzeOnly.seen.clear()
+    result = AnalyzeOnly(options_make(inputDir, outputDir, analyzeFileIndex="f")).run()
+    assert result.status and result.process is not None
+    assert result.process.filesAnalyzed == 2
+    assert len(AnalyzeOnly.seen) == 2
+    assert not outputDir.exists() or not any(outputDir.rglob("*"))
+
+
+def test_base_withoutTest_doesNotProcess(tmp_path: Path) -> None:
+    inputDir, outputDir = tree_make(tmp_path)
+    result = Pfdo(options_make(inputDir, outputDir)).run()
+    assert result.status and result.process is None
+    assert not outputDir.exists() or not any(outputDir.rglob("*"))
+
+
+def test_models_reexportPftree() -> None:
+    from pftree import models as treeModels
+
+    from pfdo import models
+
+    assert models.DirNode is treeModels.DirNode
+    assert models.StageResult is treeModels.StageResult
+    assert models.RunResult is treeModels.RunResult
+    assert models.ProcessResult is treeModels.ProcessResult
+    assert models.TreeOptions is treeModels.TreeOptions
 
 
 def test_run_missingInputDir(tmp_path: Path) -> None:

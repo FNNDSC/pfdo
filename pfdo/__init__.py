@@ -22,15 +22,19 @@ Dependencies:
 
 from __future__ import annotations
 
-__version__: str = "6.0.0"
+__version__: str = "6.1.0"
 
-from pfdo.models import PfdoOptions, fileIndex_validate
+from pfdo.models import DirNode, PfdoOptions, ProcessResult, RunResult, StageResult, fileIndex_validate
 from pfdo.pfdo import ANALYZED_PREFIX, Pfdo, fileIndex_select
 
 __all__ = [
     "ANALYZED_PREFIX",
+    "DirNode",
     "Pfdo",
     "PfdoOptions",
+    "ProcessResult",
+    "RunResult",
+    "StageResult",
     "__version__",
     "fileIndex_select",
     "fileIndex_validate",

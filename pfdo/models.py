@@ -8,6 +8,8 @@ is pftree's ``TreeOptions``.
 Key components:
     - PfdoOptions: ``TreeOptions`` plus ``analyzeFileIndex`` and ``testRun``
     - fileIndex_validate: the grammar of ``--analyzeFileIndex``
+    - DirNode, StageResult, ProcessResult, RunResult, TreeOptions: pftree's models,
+      re-exported so a tool built on pfdo imports from pfdo alone
 
 Typical usage:
     options = PfdoOptions.fromDict(vars(args))
@@ -21,7 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pftree.models import TreeOptions
+from pftree.models import DirNode, ProcessResult, RunResult, StageResult, TreeOptions
 
 FILE_INDEX_ALL: str = "a"
 FILE_INDEX_FIRST: str = "f"
@@ -73,3 +75,19 @@ class PfdoOptions(TreeOptions):
         """
         super().__post_init__()
         fileIndex_validate(self.analyzeFileIndex)
+
+
+__all__: list[str] = [
+    "FILE_INDEX_ALL",
+    "FILE_INDEX_FIRST",
+    "FILE_INDEX_LAST",
+    "FILE_INDEX_MIDDLE",
+    "FILE_INDEX_WORDS",
+    "DirNode",
+    "PfdoOptions",
+    "ProcessResult",
+    "RunResult",
+    "StageResult",
+    "TreeOptions",
+    "fileIndex_validate",
+]
