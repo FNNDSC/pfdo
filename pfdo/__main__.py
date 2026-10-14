@@ -253,22 +253,29 @@ def parserSelf_build() -> argparse.ArgumentParser:
     return parser
 
 
-def parser_build(standalone: bool = True) -> argparse.ArgumentParser:
+def parser_build(
+    standalone: bool = True, command: str = "pfdo", version: str = __version__
+) -> argparse.ArgumentParser:
     """Assemble the full parser.
 
     Args:
         standalone: include ``--inputDir`` / ``--outputDir``. A ChRIS DS plugin
             passes False and adds its own positional directories.
+        command: the program's name, for ``--help`` and ``--version``; a tool built
+            on pfdo passes its own.
+        version: the version ``--version`` prints, with ``command``.
 
     Returns:
         The parser; ``--help`` is the quick reference and points at ``--man``.
     """
-    parents: list[argparse.ArgumentParser] = [parserCore_build("pfdo", __version__), parserSelf_build()]
+    parents: list[argparse.ArgumentParser] = [parserCore_build(command, version), parserSelf_build()]
     if standalone:
         parents.insert(0, parserIO_build())
     return argparse.ArgumentParser(
-        prog="pfdo",
-        description="Walk a directory tree and do something in every directory. Full manual: pfdo --man",
+        prog=command,
+        description=(
+            f"Walk a directory tree and do something in every directory. Full manual: {command} --man"
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=parents,
     )

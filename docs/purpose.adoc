@@ -13,15 +13,17 @@ A second, more specific problem concerns which files a per-directory operation s
 
 == What pfdo is
 
-`Pfdo` subclasses `Pftree` and adds `PfdoOptions`, which is `TreeOptions` plus `analyzeFileIndex` and `testRun`. `analyzeFileIndex` names the files the analyze step gets from each directory: all of them, the first, the last, the middle, or an integer index that wraps in either direction so that `-1` is the last file and the list length is the first again. `filesToAnalyze(node)` applies it, and a subclass calls that rather than reading `node.files` directly.
+pfdo is the frame around a per-directory task: the options, the selection of which files each directory contributes, the run, the record, and the command line. A task is attached to the frame in one of two ways. A subclass of `Pfdo` overrides a callback, which is the way for a tool that also changes how the engine behaves, as `pfdo_run` does with how a job runs. A function wearing `@analyze(...)`, or registered on a `Tool` with `@tool.analyze` and `@tool.save`, is the way for a tool that supplies stages and nothing else; underneath, a `Pfdo` subclass is built for it, so the two ways run through one engine and return one record.
 
-The base class's own callbacks are a demonstration that `pfdo --test` runs: read lists a directory's files, analyze selects by index and prefixes each name with `analyzed-`, save touches those names in the output directory and refuses to overwrite an existing file unless `--overwrite` is given. A subclass overrides analyze and save with real work and sets `processAlways` so that its `run()` processes without `--test`.
+`PfdoOptions` is `TreeOptions` plus `analyzeFileIndex` and `testRun`. `analyzeFileIndex` names the files the analyze step gets from each directory: all of them, the first, the last, the middle, or an integer index that wraps in either direction so that `-1` is the last file and the list length is the first again. A subclass calls `filesToAnalyze(node)` to apply it; a decorated function receives `read.files` with it already applied.
 
-The command line and the manual are assembled from pftree's parts and pfdo's own, and are exposed in parts again, so that a package built on pfdo assembles its command line and page the same way with its own name and options. The page is rendered through `pftree.manual`, which is why `pfdo_run --man` looks like `pftree --man` with a different banner.
+The base class's own callbacks pass through, and a demonstration pair that `pfdo --test` runs shows the stages: read lists a directory's files, analyze selects by index and prefixes each name with `analyzed-`, save touches those names in the output directory and refuses to overwrite an existing file unless `--overwrite` is given. Only the stages a tool supplies run, so a tool that analyzes never has a save stage near its output tree.
+
+The command line and the manual are assembled from pftree's parts and pfdo's own, and are exposed in parts again, so that a package built on pfdo assembles its command line and page the same way with its own name and options; a decorated tool gets the assembly done for it, named after the function. The page is rendered through `pftree.manual`, which is why `pfdo_run --man` looks like `pftree --man` with a different banner.
 
 == pfdo and PathMapper
 
-The ChRIS plugin template ships `chris_plugin.PathMapper`, and a plugin author with a per-file task will reach for it first; pftree's purpose compares the two as walkers. At pfdo's level the comparison is about something else, who owns the loop, and it is best made on one task written both ways: convert every JPEG in a nested input tree to a PNG at the same place in the output tree, given a `convert(inputFile, outputFile)` that infers formats from names.
+The ChRIS plugin template ships `chris_plugin.PathMapper`, and a plugin author with a per-file task will reach for it first; pftree's purpose compares the two as walkers. At pfdo's level the comparison is about who owns the loop and what the frame around it does, and it is best made on one task written both ways: convert every JPEG in a nested input tree to a PNG at the same place in the output tree, given a `convert(inputFile, outputFile)` that infers formats from names.
 
 [source,python]
 ----
@@ -36,27 +38,29 @@ for inputFile, outputFile in mapper:
 ----
 from pathlib import Path
 
-from pfdo import Pfdo
-from pfdo.models import DirNode, PfdoOptions, StageResult
+from pfdo import analyze
+from pfdo.models import DirNode, StageResult
 
-class JpgToPng(Pfdo):
-    def inputAnalyze_callback(self, node: DirNode, read: StageResult) -> StageResult:
-        node.outputPath.mkdir(parents=True, exist_ok=True)
-        chosen = self.filesToAnalyze(node)
-        for name in chosen:
-            convert(node.path / name, node.outputPath / Path(name).with_suffix(".png"))
-        return StageResult(status=True, files=chosen)
+@analyze(fileFilter="glob:*.jpg", threads=4)
+def jpgs_toPng(node: DirNode, read: StageResult) -> StageResult:
+    for name in read.files:
+        convert(node.path / name, node.outputPath / Path(name).with_suffix(".png"))
+    return StageResult(status=True, files=read.files)
 
-JpgToPng(PfdoOptions(inputDir=inputDir, outputDir=outputDir, fileFilter="glob:*.jpg", threads=4)).run()
+jpgs_toPng(inputDir, outputDir)
 ----
 
-With PathMapper the author owns the iteration: the mapper is an iterator that yields a pair of paths with the output's parent already created, the loop body is the work, and everything around the body, what happens when one conversion raises, how many were done, whether to run them concurrently, is the author's to write and is usually left unwritten. The control flow is visible and the outcomes are silent. With pfdo the engine owns the iteration: the body is a callback the engine invokes once per directory, in threads when asked, catching a failing directory and dropping it so the rest proceed, counting, timing, and returning a record of the run. The control flow is inverted and hidden behind a method name, and the outcomes are explicit in the `StageResult` the body returns and the `RunResult` the caller receives. The same trade recurs throughout programming, a `for` loop against a mapped executor, a script against a framework route, and it is settled by the same question: is the frame part of the task?
+With PathMapper the author owns the iteration: the mapper is an iterator that yields a pair of paths with the output's parent already created, the loop body is the work, and everything around the body is the author's to write and is usually left unwritten. The control flow is visible and the outcomes are silent. With pfdo the engine owns the iteration: the function is a stage the engine invokes once per directory, in threads when asked, with the directory's selected files in `read.files` and its output directory made, catching a failing directory and dropping it so the rest proceed, counting, timing, and returning a record of the run. The control flow is implicit and the outcomes are explicit in the `StageResult` the function returns and the `RunResult` the caller receives. The decorator form brings the two to the same length, five lines against seven, and makes the comparison one of frames rather than of syntax.
 
-Two details make the difference concrete. The unit differs: PathMapper yields files, pfdo yields directories with their filtered files, so the file-wise task above costs pfdo an inner loop that PathMapper does not need, and a directory-wise task, one NIfTI from a DICOM series, one FreeSurfer run from a subject's directory, the first file of every series, costs PathMapper a `dir_mapper` and its own glob inside the body, which is the loop pfdo already has. And the ease of the four-line version holds only while it is four lines: the moment the loop needs threads, per-item error handling and a summary of what happened, it grows to the size of the subclass with the frame written inline, and reads worse than the callback it was avoiding. A four-line task deserves the four-line tool. pfdo is for the task whose frame is part of the work, and it is why the family's tools are pfdo subclasses rather than loops.
+What the frame provides, row by row, with what it costs. The unit: PathMapper yields a file, or with `dir_mapper` a directory and with `dir_mapper_deep` a leaf directory; pfdo yields a directory with its filtered files, which costs a file-wise task an inner loop and gives a directory-wise task, one NIfTI from a DICOM series, one FreeSurfer run from a subject, the first file of every series, its natural unit. Selection: PathMapper takes a glob and a Python filter fixed when the plugin is written; pfdo takes `--fileFilter`, `--dirFilter`, `--maxDepth` and `--analyzeFileIndex` from the command line, so the same tool is pointed at a different subset without a release. Parallelism: PathMapper leaves it to a `ThreadPoolExecutor` the author wraps around the mapper; pfdo has `--threads`. Failure: an exception in a PathMapper loop raises out of the loop and, under a thread pool, out of `pool.map`, ending the batch; a failing directory in pfdo fails its own record and the run continues. The record: PathMapper keeps nothing, and a plugin that wants to know how many files it processed counts them itself; pfdo returns a `RunResult` with a `StageResult` per directory per stage, counts, timing, and the tree, ready for `--json`. The command line: PathMapper has none, and the plugin's parser is the author's; a pfdo tool has pfdo's flags, `--json`, `--man`, and `--help` and `--version` named after the function. The dependencies: PathMapper is part of chris_plugin, which every plugin has; pfdo brings pftree. What is written: a loop body against a function that returns a record.
+
+The costs are not small for the smallest task. A four-line conversion pays an inner loop and a `StageResult` it has nothing to put in, and the frame is a thing to learn before the four lines can be written. A four-line task deserves the four-line tool. The pay-off starts at the first row of the table the task needs, and in practice that is early.
+
+pl-dylld shows where. It is a PathMapper plugin with an `--inNode` flag that switches it from `file_mapper` over a glob to `dir_mapper_deep`, which yields every directory that has no subdirectories, so that its workflow runs once per DICOM series rather than once per file. That is a reach for pfdo's unit from inside PathMapper, and it gets half of it: a leaf directory but not its file list, so the body globs the directory again; no filter a user can set, since the mapper's filter is a Python callable; a subject directory that holds series directories is never visited, because only leaves are; and around the mapper the plugin writes its own `ThreadPoolExecutor`, its own iteration over `pool.map` to surface exceptions, and its own log written to the output directory at the end. That is the frame, rebuilt by hand, missing the record and the per-directory failure isolation, in the plugin that most needed them. It is the evidence that the directory unit and the frame around it are what a per-series plugin wants, and that PathMapper, by design, stops before them.
 
 == What pfdo is not
 
-pfdo does nothing per directory by itself; a subclass does. It is not a file iterator, and it is not a ChRIS plugin, though its ChRIS-style parser variant exists so that a plugin wrapper can give it positional input and output directories.
+pfdo does nothing per directory by itself; a subclass or a decorated function does. It is not a file iterator, and it is not a ChRIS plugin, though its ChRIS-style parser variant exists so that a plugin wrapper can give it positional input and output directories.
 
 == Who uses it
 
