@@ -74,6 +74,7 @@ class Tool:
             the command and plugin forms, the baseline under ``run``'s overrides.
         stages: the registered stage functions, by stage name.
         name: the tool's name, for the command's ``--help`` and ``--version``.
+        version: the version ``--version`` prints; pfdo's own when ``None``.
 
     Example:
         >>> tool = Tool(fileFilter="glob:*.jpg")
@@ -84,8 +85,9 @@ class Tool:
         ['analyze']
     """
 
-    def __init__(self, name: str = "pfdo", **defaults: object) -> None:
+    def __init__(self, name: str = "pfdo", version: str | None = None, **defaults: object) -> None:
         self.name: str = name
+        self.version: str | None = version
         self.defaults: dict[str, object] = dict(defaults)
         self.stages: dict[str, Callable[..., StageResult]] = {}
         self.__name__: str = name
@@ -174,7 +176,7 @@ class Tool:
         from pfdo.__main__ import parser_build
 
         built: argparse.ArgumentParser = parser_build(
-            standalone=standalone, command=self.name, version=__version__
+            standalone=standalone, command=self.name, version=self.version or __version__
         )
         built.set_defaults(**self.defaults)
         return built
@@ -264,10 +266,11 @@ class Tool:
         )
 
 
-def analyze(**defaults: object) -> Callable[[Stage], Tool]:
+def analyze(version: str | None = None, **defaults: object) -> Callable[[Stage], Tool]:
     """Make a one-stage tool from an analyze function.
 
     Args:
+        version: the version ``--version`` prints; pfdo's own when ``None``.
         **defaults: pfdo option values, as ``fileFilter="glob:*.jpg"`` or ``threads=4``.
 
     Returns:
@@ -282,7 +285,7 @@ def analyze(**defaults: object) -> Callable[[Stage], Tool]:
     """
 
     def decorator(func: Stage) -> Tool:
-        tool: Tool = Tool(name=func.__name__, **defaults)
+        tool: Tool = Tool(name=func.__name__, version=version, **defaults)
         tool.analyze(func)
         tool.__doc__ = func.__doc__
         tool.__module__ = func.__module__
