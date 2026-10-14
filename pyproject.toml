@@ -28,7 +28,7 @@ Homepage = "https://github.com/FNNDSC/pfdo"
 pfdo = "pfdo.__main__:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = ["pytest>=8", "ruff>=0.6", "chris_plugin>=0.4.0"]
 
 [tool.setuptools]
 packages = ["pfdo"]
