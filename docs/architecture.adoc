@@ -3,7 +3,7 @@
 
 == Abstract
 
-pfdo is three small modules over pftree: `models` adds pfdo's options to pftree's, `pfdo` adds the file-index rule and the demonstration callbacks to pftree's engine, and `__main__` adds pfdo's options and manual pieces to pftree's and assembles a command. Nothing in pftree is reimplemented; everything pfdo adds is exposed for the next layer the same way pftree exposed it.
+pfdo is three small modules over pftree: `models` adds pfdo's options to pftree's and re-exports pftree's models, so that a tool built on pfdo imports from one place, `pfdo` adds the file-index rule and the demonstration callbacks to pftree's engine, and `__main__` adds pfdo's options and manual pieces to pftree's and assembles a command. Nothing in pftree is reimplemented; everything pfdo adds is exposed for the next layer the same way pftree exposed it.
 
 == Options
 
@@ -15,7 +15,7 @@ pfdo is three small modules over pftree: `models` adds pfdo's options to pftree'
 
 == The engine
 
-`Pfdo` inherits the scan, the filters and `tree_process` unchanged and overrides the three callbacks with demonstrations. `run()` checks the environment, probes and constructs the tree, filters it, and processes it when `processAlways` is set on the class or `testRun` in the options. The result is pftree's `RunResult`; pfdo introduces no result type of its own because it produces nothing pftree's does not already describe.
+`Pfdo` inherits the scan, the filters and `tree_process` unchanged. Its own callbacks pass through: read lists a directory's files, analyze selects by index and returns the names, save writes nothing; the demonstration pair that prefixes names and touches files runs only under `--test`. `callbacks_run` hands `tree_process` only the stages the subclass overrides, detected by comparing the method on the subclass with `Pfdo`'s own, so a tool that only analyzes never has a save stage near its output tree and never has to know one exists. `run()` checks the environment, probes and constructs the tree, filters it, and processes it when any callback is overridden, when `processAlways` is set, or when `testRun` asks. The result is pftree's `RunResult`; pfdo introduces no result type of its own because it produces nothing pftree's does not already describe.
 
 The save demonstration shows the failure contract: an existing output file, absent `--overwrite`, returns a `StageResult` with `status` False for that directory and the run continues; the 5.x loop broke out and left the directory partly written, with the error printed in a box and the status set but the loop's other files untouched.
 
