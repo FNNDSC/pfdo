@@ -173,6 +173,10 @@ def test_commandForm_helpAndVersion_nameTheTool(capsys: pytest.CaptureFixture[st
     with pytest.raises(SystemExit):
         tool.main(["--version"])
     assert capsys.readouterr().out.startswith("copy_toPng ")
+    versioned: Tool = analyze(version="9.9.9")(copy_toPng)
+    with pytest.raises(SystemExit):
+        versioned.main(["--version"])
+    assert capsys.readouterr().out.strip() == "copy_toPng 9.9.9"
     with pytest.raises(SystemExit):
         tool.main(["--help"])
     assert "copy_toPng --man" in capsys.readouterr().out
