@@ -28,3 +28,5 @@ Version 6.2.0 came out of the same comparison taken one step further. With the s
 Version 6.2.1 let a decorated tool carry its own version: `Tool(version=...)` and `analyze(version=...)`, so a plugin built from the template answers `--version` as itself rather than as pfdo, which the first cut of the pfstack template showed.
 
 Version 6.3.0 took pftree 4.2's `--man` and `--synopsis`, which print and exit as they are read, as `--version` does, so a tool run as a ChRIS plugin answers `--man` without the `inputdir outputdir` that `chris_plugin` makes positional. `parser_build` attaches pfdo's page with `manual_attach`, and neither `main` nor `Tool.main` handles the flags after parsing any more.
+
+Version 6.3.1 rewrote the manual entries for `--test` and `--analyzeFileIndex`, which every package built on pfdo shows, on the operator's reading of pl-freesurfer's manual: `--test` had been "the dummy internal callback loop triad", and is a trial run that writes an empty `analyzed-<name>` for each file a real run would be given; `--analyzeFileIndex` lost its pedantry about wrapping and says the list is sorted by name.
