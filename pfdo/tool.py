@@ -226,15 +226,11 @@ class Tool:
             The exit status: 0 on success, 1 when the run failed, 2 on bad arguments.
         """
         from pftree.__main__ import logging_configure
-        from pftree.manual import manual_print
 
-        from pfdo.__main__ import manual_build, result_report
+        from pfdo.__main__ import result_report
 
         parser: argparse.ArgumentParser = self.parser()
         args: argparse.Namespace = parser.parse_args(argv)
-        if args.man or args.synopsis:
-            manual_print(manual_build(), shortOnly=not args.man)
-            return EXIT_OK
         if not args.inputDir:
             parser.error("--inputDir is required")
         try:
