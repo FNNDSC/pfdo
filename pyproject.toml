@@ -10,7 +10,7 @@ readme = "README.rst"
 license = { text = "MIT" }
 authors = [{ name = "FNNDSC", email = "dev@babyMRI.org" }]
 requires-python = ">=3.11"
-dependencies = ["pftree>=4.1.0"]
+dependencies = ["pftree>=4.2.0"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",

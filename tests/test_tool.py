@@ -180,7 +180,10 @@ def test_commandForm_helpAndVersion_nameTheTool(capsys: pytest.CaptureFixture[st
     with pytest.raises(SystemExit):
         tool.main(["--help"])
     assert "copy_toPng --man" in capsys.readouterr().out
-    assert tool.main(["--synopsis"]) == 0
+    with pytest.raises(SystemExit) as exc:
+        tool.main(["--synopsis"])
+    assert exc.value.code == 0
+    assert "SYNOPSIS" in capsys.readouterr().out
 
 
 def test_commandForm_exitStatus(tmp_path: Path) -> None:

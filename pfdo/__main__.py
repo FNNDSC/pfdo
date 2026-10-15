@@ -40,7 +40,7 @@ from pftree.__main__ import (
     parserCore_build,
     parserIO_build,
 )
-from pftree.manual import Manual, manual_print
+from pftree.manual import Manual, manual_attach
 from pftree.models import RunResult
 
 from pfdo import __version__
@@ -266,12 +266,13 @@ def parser_build(
         version: the version ``--version`` prints, with ``command``.
 
     Returns:
-        The parser; ``--help`` is the quick reference and points at ``--man``.
+        The parser; ``--help`` is the quick reference and points at ``--man``, which
+        with ``--synopsis`` prints pfdo's manual and exits as it is read.
     """
     parents: list[argparse.ArgumentParser] = [parserCore_build(command, version), parserSelf_build()]
     if standalone:
         parents.insert(0, parserIO_build())
-    return argparse.ArgumentParser(
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
         prog=command,
         description=(
             f"Walk a directory tree and do something in every directory. Full manual: {command} --man"
@@ -279,6 +280,8 @@ def parser_build(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=parents,
     )
+    manual_attach(parser, manual_build())
+    return parser
 
 
 def options_fromArgs(args: argparse.Namespace) -> PfdoOptions:
@@ -317,9 +320,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     """
     parser: argparse.ArgumentParser = parser_build()
     args: argparse.Namespace = parser.parse_args(argv)
-    if args.man or args.synopsis:
-        manual_print(manual_build(), shortOnly=not args.man)
-        return 0
     if not args.inputDir:
         parser.error("--inputDir is required")
     try:

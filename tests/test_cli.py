@@ -71,14 +71,18 @@ def test_main_versionAndManual(capsys: pytest.CaptureFixture[str]) -> None:
         main(["--version"])
     assert exc.value.code == 0
     assert __version__ in capsys.readouterr().out
-    assert main(["--man"]) == 0
+    with pytest.raises(SystemExit) as exc:
+        main(["--man"])
+    assert exc.value.code == 0
     out: str = capsys.readouterr().out
     assert "Path-File Do (something)" in out
     assert "[--analyzeFileIndex <a|f|l|m|N>]" in out
     assert "[--fileFilter <token1,token2,...>]" in out
     assert "EXAMPLES" in out
     assert "``" not in out
-    assert main(["--synopsis"]) == 0
+    with pytest.raises(SystemExit) as exc:
+        main(["--synopsis"])
+    assert exc.value.code == 0
     assert "DESCRIPTION" not in capsys.readouterr().out
 
 
@@ -96,3 +100,13 @@ def test_parser_build_dsOmitsIoArguments() -> None:
         dsStyle.parse_args(["--inputDir", "x"])
     args = dsStyle.parse_args(["--analyzeFileIndex", "m", "--test"])
     assert args.analyzeFileIndex == "m" and args.testRun is True
+
+
+def test_parser_dsStyleManNeedsNoDirectories(capsys: pytest.CaptureFixture[str]) -> None:
+    parser = parser_build(standalone=False, command="pfdo_x")
+    parser.add_argument("inputdir")
+    parser.add_argument("outputdir")
+    with pytest.raises(SystemExit) as exc:
+        parser.parse_args(["--man"])
+    assert exc.value.code == 0
+    assert "Path-File Do (something)" in capsys.readouterr().out
