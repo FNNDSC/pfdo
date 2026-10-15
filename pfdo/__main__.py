@@ -95,39 +95,26 @@ CLI_SELF: str = """
 
 ARGS_SYNOPSIS_SELF: str = """
         [--test]
-        If specified, run the "dummy" internal callback loop triad. The test
-        flow simply tags files in some inputDir tree and "touches" them to a
-        reconstituted tree in the output directory, prefixed with the text
-        "analyzed-". An output file that already exists stops that directory
-        unless --overwrite is given.
+        Do a trial run: instead of the tool's own work, write an empty file
+        named analyzed-<name> in the matching output directory for every
+        file the filters and --analyzeFileIndex select, and nothing else.
+        It shows which files a real run would be given. A file left by an
+        earlier --test stops its directory unless --overwrite is given.
 
         [--analyzeFileIndex <a|f|l|m|N>]
-        An optional string to further "filter" the list of files that have
-        been detected to analyze. This is useful for certain operations
-        that might need only one file in an input directory to start but
-        then once started will self consume multiple files independently
-        of the external controller. The default is "a" which implies
-        *ALL* files in a given directory. The set of valid values:
+        Which of a directory's files, after the filters and sorted by name,
+        the tool is given:
 
-            "a":    "all" files.
-            "m":    only the "middle" file in the file list
-            "f":    only the "first" file in the file list
-            "l":    only the "last" file in the file list
-            "<N>":  only the file at index N in the file list. This index
-                    can "wrap" in the positive and negative direction and
-                    can exceed the actual list length (in which case it is
-                    mapped back into the original list).
+            a       all of them, the default
+            f       the first
+            l       the last
+            m       the middle one
+            <N>     the one at index N, counting from 0; a negative N
+                    counts from the end, -1 being the last, and N wraps
+                    around the list in either direction
 
-                    Pedantically, in the negative direction:
-                        '-1' will mean the last file, while
-                        -<listLen> will mean the first file again
-                        -<listLen+1> will mean the last file again
-                        etc...
-                    and in the positive direction:
-                        <listLen> will mean the first file
-                        <listLen>*2 will mean the first file
-                        etc...
-"""
+        f suits a program that needs one file to find the rest, such as
+        one DICOM file of a series."""
 
 EXAMPLES: str = """
 
