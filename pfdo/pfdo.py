@@ -96,25 +96,33 @@ def volumes_select(files: list[str]) -> list[str]:
     return [name for name in files if not file_isDicom(name) or name == series]
 
 
-def volume_name(dirName: str, fileName: str) -> str:
+def volume_name(dirName: str, fileName: str, files: list[str]) -> str:
     """The name of the volume a selected file stands for.
 
-    A DICOM series is named after its directory; any other file after its name less
-    its extension, and less a compression suffix before that, so ``t1.nii.gz`` is
-    ``t1`` and ``meeting.mp4`` is ``meeting``.
+    A volume alone in its directory, and a DICOM series anywhere, is named after the
+    directory, so ``sub-01/t1.nii.gz`` is ``sub-01``. A file sharing its directory
+    with other volumes is named after its own name less its extension, and less a
+    compression suffix before that, so ``scan01.nii.gz`` beside ``scan02.nii.gz`` is
+    ``scan01`` and ``meeting.mp4`` beside another recording is ``meeting``.
 
     Args:
         dirName: the name of the file's directory.
         fileName: the file.
+        files: the directory's files, after the filters, which say how many volumes
+            it holds.
 
     Returns:
         The volume's name.
 
     Example:
-        >>> volume_name("T1_MPRAGE", "im001.dcm"), volume_name("sub-01", "scan.v2.nii.gz")
-        ('T1_MPRAGE', 'scan.v2')
+        >>> volume_name("sub-01", "t1.nii.gz", ["t1.nii.gz"])
+        'sub-01'
+        >>> volume_name("sub-02", "scan.v2.nii.gz", ["scan.v2.nii.gz", "scan.v3.nii.gz"])
+        'scan.v2'
+        >>> volume_name("T1_MPRAGE", "im001.dcm", ["im001.dcm", "im002.dcm", "t1.nii"])
+        'T1_MPRAGE'
     """
-    if file_isDicom(fileName):
+    if file_isDicom(fileName) or len(volumes_select(files)) <= 1:
         return dirName
     path: PurePath = PurePath(fileName)
     if path.suffix.lower() in COMPRESSION_SUFFIXES:

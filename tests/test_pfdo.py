@@ -132,8 +132,20 @@ def test_volumes_dropped(files: list[str], spec: str, dropped: list[str]) -> Non
         ("archive.tar.zst", "archive"),
     ],
 )
-def test_volume_name(fileName: str, expected: str) -> None:
-    assert volume_name("T1", fileName) == expected
+def test_volume_name_amongOthers_isTheStem(fileName: str, expected: str) -> None:
+    assert volume_name("T1", fileName, [fileName, "other.nii", "s1.dcm", "s2.dcm"]) == expected
+
+
+@pytest.mark.parametrize(
+    ("fileName", "files"),
+    [
+        ("t1.nii.gz", ["t1.nii.gz"]),
+        ("meeting.mp4", ["meeting.mp4"]),
+        ("im001.dcm", ["im001.dcm", "im002.dcm", "im003.dcm"]),
+    ],
+)
+def test_volume_name_alone_isTheDirectory(fileName: str, files: list[str]) -> None:
+    assert volume_name("sub-01", fileName, files) == "sub-01"
 
 
 def test_testRun_fileIndexVolume_warnsUnderFirst(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
