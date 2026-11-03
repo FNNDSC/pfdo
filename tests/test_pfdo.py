@@ -9,7 +9,14 @@ import pytest
 from pftree.models import DirNode, StageResult
 
 from pfdo.models import PfdoOptions, fileIndex_validate
-from pfdo.pfdo import ANALYZED_PREFIX, Pfdo, fileIndex_select, volumes_dropped, volumes_select
+from pfdo.pfdo import (
+    ANALYZED_PREFIX,
+    Pfdo,
+    fileIndex_select,
+    volume_name,
+    volumes_dropped,
+    volumes_select,
+)
 
 FILES: list[str] = ["a", "b", "c", "d", "e"]
 
@@ -109,6 +116,24 @@ def test_volumes_select(files: list[str], expected: list[str]) -> None:
 )
 def test_volumes_dropped(files: list[str], spec: str, dropped: list[str]) -> None:
     assert volumes_dropped(files, fileIndex_select(files, spec)) == dropped
+
+
+@pytest.mark.parametrize(
+    ("fileName", "expected"),
+    [
+        ("im001.dcm", "T1"),
+        ("IM001.DCM", "T1"),
+        ("scan01.nii.gz", "scan01"),
+        ("scan01.nii", "scan01"),
+        ("brain.mgz", "brain"),
+        ("scan.v2.nii.gz", "scan.v2"),
+        ("meeting.mp4", "meeting"),
+        ("notes", "notes"),
+        ("archive.tar.zst", "archive"),
+    ],
+)
+def test_volume_name(fileName: str, expected: str) -> None:
+    assert volume_name("T1", fileName) == expected
 
 
 def test_testRun_fileIndexVolume_warnsUnderFirst(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:

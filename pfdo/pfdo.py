@@ -20,6 +20,7 @@ Key components:
       ``outputSave_callback``
     - fileIndex_select: the ``--analyzeFileIndex`` rule, as a pure function
     - volumes_select, volumes_dropped: the volume rule behind ``v`` and the warning
+    - volume_name: what a volume is called, for the tools that name outputs after it
 
 Typical usage:
     from pfdo.models import DirNode, PfdoOptions, StageResult
@@ -38,7 +39,7 @@ Dependencies:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from pftree.tree import Pftree
 
@@ -60,6 +61,7 @@ logger: logging.Logger = logging.getLogger("pfdo")
 ANALYZED_PREFIX: str = "analyzed-"
 CALLBACK_NAMES: tuple[str, str, str] = ("inputRead_callback", "inputAnalyze_callback", "outputSave_callback")
 DICOM_SUFFIX: str = ".dcm"
+COMPRESSION_SUFFIXES: tuple[str, ...] = (".gz", ".bz2", ".xz", ".zst")
 
 
 def file_isDicom(name: str) -> bool:
@@ -92,6 +94,32 @@ def volumes_select(files: list[str]) -> list[str]:
     dicoms: list[str] = [name for name in files if file_isDicom(name)]
     series: str | None = min(dicoms) if dicoms else None
     return [name for name in files if not file_isDicom(name) or name == series]
+
+
+def volume_name(dirName: str, fileName: str) -> str:
+    """The name of the volume a selected file stands for.
+
+    A DICOM series is named after its directory; any other file after its name less
+    its extension, and less a compression suffix before that, so ``t1.nii.gz`` is
+    ``t1`` and ``meeting.mp4`` is ``meeting``.
+
+    Args:
+        dirName: the name of the file's directory.
+        fileName: the file.
+
+    Returns:
+        The volume's name.
+
+    Example:
+        >>> volume_name("T1_MPRAGE", "im001.dcm"), volume_name("sub-01", "scan.v2.nii.gz")
+        ('T1_MPRAGE', 'scan.v2')
+    """
+    if file_isDicom(fileName):
+        return dirName
+    path: PurePath = PurePath(fileName)
+    if path.suffix.lower() in COMPRESSION_SUFFIXES:
+        path = path.with_suffix("")
+    return path.stem
 
 
 def volumes_dropped(files: list[str], selected: list[str]) -> list[str]:
