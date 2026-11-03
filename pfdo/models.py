@@ -29,14 +29,21 @@ FILE_INDEX_ALL: str = "a"
 FILE_INDEX_FIRST: str = "f"
 FILE_INDEX_LAST: str = "l"
 FILE_INDEX_MIDDLE: str = "m"
-FILE_INDEX_WORDS: tuple[str, ...] = (FILE_INDEX_ALL, FILE_INDEX_FIRST, FILE_INDEX_LAST, FILE_INDEX_MIDDLE)
+FILE_INDEX_VOLUME: str = "v"
+FILE_INDEX_WORDS: tuple[str, ...] = (
+    FILE_INDEX_ALL,
+    FILE_INDEX_FIRST,
+    FILE_INDEX_LAST,
+    FILE_INDEX_MIDDLE,
+    FILE_INDEX_VOLUME,
+)
 
 
 def fileIndex_validate(spec: str) -> None:
     """Check an ``--analyzeFileIndex`` value.
 
     Args:
-        spec: ``a``, ``f``, ``l``, ``m`` or an integer, possibly negative.
+        spec: ``a``, ``f``, ``l``, ``m``, ``v`` or an integer, possibly negative.
 
     Raises:
         ValueError: for anything else.
@@ -46,7 +53,7 @@ def fileIndex_validate(spec: str) -> None:
     try:
         int(spec)
     except ValueError as err:
-        raise ValueError(f"analyzeFileIndex must be a, f, l, m or an integer, not {spec!r}") from err
+        raise ValueError(f"analyzeFileIndex must be a, f, l, m, v or an integer, not {spec!r}") from err
 
 
 @dataclass
@@ -56,7 +63,9 @@ class PfdoOptions(TreeOptions):
     Attributes:
         analyzeFileIndex: which of a directory's files the analyze callback gets:
             ``a`` all (the default), ``f`` the first, ``l`` the last, ``m`` the
-            middle, or an integer index that wraps in either direction.
+            middle, ``v`` one file per volume (every ``.dcm`` of the directory
+            together, by its first; every other file alone), or an integer index
+            that wraps in either direction.
         testRun: run the base class's demonstration callbacks over the tree.
 
     Example:
@@ -82,6 +91,7 @@ __all__: list[str] = [
     "FILE_INDEX_FIRST",
     "FILE_INDEX_LAST",
     "FILE_INDEX_MIDDLE",
+    "FILE_INDEX_VOLUME",
     "FILE_INDEX_WORDS",
     "DirNode",
     "PfdoOptions",
