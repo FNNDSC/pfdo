@@ -41,8 +41,8 @@ Command line
 
 ``pfdo --man`` prints the full manual, ``--synopsis`` its first page, ``--help`` the quick reference. All of ``pftree``'s options apply (``--fileFilter``, ``--dirFilter`` and their logic, ``--maxDepth``, ``--outputLeafDir``, ``--threads``, ``--relativeDir``, ``--followLinks``, ``--overwrite``, ``--json``, ``--printElapsedTime``); ``pfdo`` adds:
 
-``--analyzeFileIndex <a|f|l|m|N>``
-    Which of a directory's files the analyze step receives: ``a`` all (default), ``f`` first, ``l`` last, ``m`` middle, or an integer index that wraps in either direction (``-1`` is the last file, ``len`` the first again).
+``--analyzeFileIndex <a|f|l|m|v|N>``
+    Which of a directory's files the analyze step receives: ``a`` all (default), ``f`` first, ``l`` last, ``m`` middle, ``v`` one per volume, or an integer index that wraps in either direction (``-1`` is the last file, ``len`` the first again). For ``v`` the ``.dcm`` files of a directory together are one volume, given by the first in sorted order, and every other file that passes the filters is a volume of its own; ``--fileFilter`` decides which files count, so a filter naming the input types keeps sidecars out. Any other choice that leaves out a volume ``v`` would have run logs a warning naming it.
 
 ``--test``
     Run the demonstration callbacks. An output file that already exists stops that directory unless ``--overwrite`` is given.

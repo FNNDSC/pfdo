@@ -9,7 +9,14 @@ import pytest
 from pftree.models import DirNode, StageResult
 
 from pfdo.models import PfdoOptions, fileIndex_validate
-from pfdo.pfdo import ANALYZED_PREFIX, Pfdo, fileIndex_select
+from pfdo.pfdo import (
+    ANALYZED_PREFIX,
+    Pfdo,
+    fileIndex_select,
+    volume_name,
+    volumes_dropped,
+    volumes_select,
+)
 
 FILES: list[str] = ["a", "b", "c", "d", "e"]
 
@@ -47,6 +54,7 @@ def options_make(inputDir: Path, outputDir: Path, **extra: object) -> PfdoOption
         ("f", ["a"]),
         ("l", ["e"]),
         ("m", ["c"]),
+        ("v", FILES),
         ("0", ["a"]),
         ("4", ["e"]),
         ("5", ["a"]),
@@ -73,10 +81,103 @@ def test_fileIndex_select_emptyAndBad() -> None:
 
 
 def test_fileIndex_validate() -> None:
-    for spec in ("a", "f", "l", "m", "0", "-3", "42"):
+    for spec in ("a", "f", "l", "m", "v", "0", "-3", "42"):
         fileIndex_validate(spec)
     with pytest.raises(ValueError, match="analyzeFileIndex"):
         fileIndex_validate("middle")
+
+
+@pytest.mark.parametrize(
+    ("files", "expected"),
+    [
+        (["s03.dcm", "s01.dcm", "s02.dcm"], ["s01.dcm"]),
+        (["scan01.nii", "scan02.nii", "scan03.nii"], ["scan01.nii", "scan02.nii", "scan03.nii"]),
+        (["s02.dcm", "s01.DCM", "t1.nii"], ["s01.DCM", "t1.nii"]),
+        (["a.mgz", "meeting.mp4"], ["a.mgz", "meeting.mp4"]),
+        ([], []),
+    ],
+)
+def test_volumes_select(files: list[str], expected: list[str]) -> None:
+    assert volumes_select(files) == expected
+    assert fileIndex_select(files, "v") == expected
+
+
+@pytest.mark.parametrize(
+    ("files", "spec", "dropped"),
+    [
+        (["s01.dcm", "s02.dcm", "s03.dcm"], "f", []),
+        (["s01.dcm", "s02.dcm", "s03.dcm"], "m", []),
+        (["scan01.nii.gz", "scan02.nii.gz", "scan03.nii.gz"], "f", ["scan02.nii.gz", "scan03.nii.gz"]),
+        (["s01.dcm", "s02.dcm", "t1.nii"], "f", ["t1.nii"]),
+        (["s01.dcm", "s02.dcm", "t1.nii"], "l", ["s01.dcm"]),
+        (["scan01.nii.gz", "scan02.nii.gz"], "a", []),
+        (["s01.dcm", "s02.dcm", "t1.nii"], "v", []),
+    ],
+)
+def test_volumes_dropped(files: list[str], spec: str, dropped: list[str]) -> None:
+    assert volumes_dropped(files, fileIndex_select(files, spec)) == dropped
+
+
+@pytest.mark.parametrize(
+    ("fileName", "expected"),
+    [
+        ("im001.dcm", "T1"),
+        ("IM001.DCM", "T1"),
+        ("scan01.nii.gz", "scan01"),
+        ("scan01.nii", "scan01"),
+        ("brain.mgz", "brain"),
+        ("scan.v2.nii.gz", "scan.v2"),
+        ("meeting.mp4", "meeting"),
+        ("notes", "notes"),
+        ("archive.tar.zst", "archive"),
+    ],
+)
+def test_volume_name_amongOthers_isTheStem(fileName: str, expected: str) -> None:
+    assert volume_name("T1", fileName, [fileName, "other.nii", "s1.dcm", "s2.dcm"]) == expected
+
+
+@pytest.mark.parametrize(
+    ("fileName", "files"),
+    [
+        ("t1.nii.gz", ["t1.nii.gz"]),
+        ("meeting.mp4", ["meeting.mp4"]),
+        ("im001.dcm", ["im001.dcm", "im002.dcm", "im003.dcm"]),
+    ],
+)
+def test_volume_name_alone_isTheDirectory(fileName: str, files: list[str]) -> None:
+    assert volume_name("sub-01", fileName, files) == "sub-01"
+
+
+def test_testRun_fileIndexVolume_warnsUnderFirst(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    inputDir: Path = tmp_path / "incoming"
+    outputDir: Path = tmp_path / "outgoing"
+    for rel, names in {
+        "sub-01": ["scan01.nii.gz", "scan02.nii.gz", "scan03.nii.gz"],
+        "sub-02/T1": ["im001.dcm", "im002.dcm", "im003.dcm"],
+    }.items():
+        (inputDir / rel).mkdir(parents=True)
+        for name in names:
+            (inputDir / rel / name).touch()
+    outputDir.mkdir()
+
+    result = Pfdo(options_make(inputDir, outputDir, testRun=True, analyzeFileIndex="v")).run()
+    assert result.status
+    assert {p.name for p in (outputDir / "sub-01").iterdir()} == {
+        "analyzed-scan01.nii.gz",
+        "analyzed-scan02.nii.gz",
+        "analyzed-scan03.nii.gz",
+    }
+    assert {p.name for p in (outputDir / "sub-02/T1").iterdir()} == {"analyzed-im001.dcm"}
+    assert "leaves out" not in caplog.text
+
+    caplog.clear()
+    result = Pfdo(options_make(inputDir, tmp_path / "first", testRun=True, analyzeFileIndex="f")).run()
+    assert result.status
+    warnings: list[str] = [r.getMessage() for r in caplog.records if r.levelname == "WARNING"]
+    assert warnings == [
+        "sub-01: --analyzeFileIndex f leaves out 2 more volume(s): scan02.nii.gz, scan03.nii.gz;"
+        " --analyzeFileIndex v runs each"
+    ]
 
 
 def test_options_rejectBadIndex(tmp_path: Path) -> None:

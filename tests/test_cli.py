@@ -76,7 +76,7 @@ def test_main_versionAndManual(capsys: pytest.CaptureFixture[str]) -> None:
     assert exc.value.code == 0
     out: str = capsys.readouterr().out
     assert "Path-File Do (something)" in out
-    assert "[--analyzeFileIndex <a|f|l|m|N>]" in out
+    assert "[--analyzeFileIndex <a|f|l|m|v|N>]" in out
     assert "[--fileFilter <token1,token2,...>]" in out
     assert "EXAMPLES" in out
     assert "``" not in out

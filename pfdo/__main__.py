@@ -90,7 +90,7 @@ BANNER_TEXT: str = """
 """
 
 CLI_SELF: str = """
-        [--analyzeFileIndex <a|f|l|m|N>]                                        \\
+        [--analyzeFileIndex <a|f|l|m|v|N>]                                      \\
         [--test]                                                                \\"""
 
 ARGS_SYNOPSIS_SELF: str = """
@@ -101,7 +101,7 @@ ARGS_SYNOPSIS_SELF: str = """
         It shows which files a real run would be given. A file left by an
         earlier --test stops its directory unless --overwrite is given.
 
-        [--analyzeFileIndex <a|f|l|m|N>]
+        [--analyzeFileIndex <a|f|l|m|v|N>]
         Which of a directory's files, after the filters and sorted by name,
         the tool is given:
 
@@ -109,12 +109,20 @@ ARGS_SYNOPSIS_SELF: str = """
             f       the first
             l       the last
             m       the middle one
+            v       one per volume: the .dcm files together are one
+                    volume, given by the first of them, and every other
+                    file is a volume of its own
             <N>     the one at index N, counting from 0; a negative N
                     counts from the end, -1 being the last, and N wraps
                     around the list in either direction
 
         f suits a program that needs one file to find the rest, such as
-        one DICOM file of a series."""
+        one DICOM file of a series. v suits the same program over a
+        directory that may hold several inputs, a series and NIfTI files
+        side by side or a folder of scans: each runs once. Which files
+        count is --fileFilter's choice, so a filter that names the input
+        types keeps sidecars such as .json out. When any other choice
+        leaves out a volume that v would have run, a warning names it."""
 
 EXAMPLES: str = """
 
@@ -235,7 +243,7 @@ def parserSelf_build() -> argparse.ArgumentParser:
         "--analyzeFileIndex",
         dest="analyzeFileIndex",
         default="a",
-        help="which files per directory the analyze step gets: a (all), f, l, m, or an index",
+        help="which files per directory the analyze step gets: a (all), f, l, m, v (per volume), or an index",
     )
     return parser
 

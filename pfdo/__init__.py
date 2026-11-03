@@ -10,6 +10,7 @@ Key components:
     - Tool, analyze: the frame with a task attached by decorator
     - PfdoOptions: pftree's options plus pfdo's
     - fileIndex_select: the ``--analyzeFileIndex`` rule
+    - volumes_select, volumes_dropped, volume_name: the volume rule behind ``v``
     - __main__: the ``pfdo`` command line, its manual, and the parts a package
       built on pfdo assembles its own from
 
@@ -28,10 +29,10 @@ Dependencies:
 
 from __future__ import annotations
 
-__version__: str = "6.3.1"
+__version__: str = "6.4.0"
 
 from pfdo.models import DirNode, PfdoOptions, ProcessResult, RunResult, StageResult, fileIndex_validate
-from pfdo.pfdo import ANALYZED_PREFIX, Pfdo, fileIndex_select
+from pfdo.pfdo import ANALYZED_PREFIX, Pfdo, fileIndex_select, volume_name, volumes_dropped, volumes_select
 from pfdo.tool import Tool, analyze
 
 __all__ = [
@@ -47,4 +48,7 @@ __all__ = [
     "analyze",
     "fileIndex_select",
     "fileIndex_validate",
+    "volume_name",
+    "volumes_dropped",
+    "volumes_select",
 ]
